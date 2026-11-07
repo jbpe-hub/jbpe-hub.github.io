@@ -503,6 +503,7 @@ function openItem(id) {
    <dl class="meta"><dt>대상 학년</dt><dd>${esc(it.g.join(", "))}</dd><dt>영역</dt><dd>${esc(it.a.join(", "))}</dd><dt>올린 선생님</dt><dd>${esc(it.by)} (${esc(it.sc)})</dd><dt>올린 날</dt><dd>${esc(it.dt)}</dd><dt>조회</dt><dd>${it.v}</dd></dl>
    <div class="file"><span class="ext">${it.hasFile ? "FILE" : "LINK"}</span><div>${esc(it.fname || it.t)}<small>${kind}</small></div>
    ${locked ? `<button class="btn" onclick="closeM();openJoin()">회원만 내려받기</button>` : `<button class="btn primary" onclick='getFile(${JSON.stringify(it.id)})'>${it.hasFile ? "내려받기" : "열기"}</button>`}</div>
+   ${it.hasFile && it.link ? `<div class="file"><span class="ext">LINK</span><div>${esc(it.ty === "영상" ? "영상 보기" : it.ty === "프로그램" ? "프로그램 바로 열기" : "관련 링크")}<small>${esc(it.link.replace(/^https?:\/\//, "").slice(0, 60))}</small></div>${locked ? `<button class="btn" onclick="closeM();openJoin()">회원만 열기</button>` : `<a class="btn primary" href="${esc(it.link)}" target="_blank" rel="noopener" style="text-decoration:none">열기</a>`}</div>` : ""}
    ${locked ? `<div class="box2" style="margin-top:10px">이 자료는 <b>회원이 되면 내려받을 수 있어요.</b> 산출물 제출 의무 없이 가입할 수 있습니다.</div>` : ""}
    ${it.src ? `<p style="font-size:13px;margin:10px 0 0"><b>참고한 자료</b> ${esc(it.src)}</p>` : ""}
    <div class="lic">이용 조건: 출처 표시 · 비영리 · 고쳐 쓰면 출처 밝히기${it.m ? " · 회원 외 배포 금지" : ""}</div>
@@ -616,7 +617,7 @@ function openUpload() {
     <label>영역 (여러 개 선택)</label><div class="pick" id="ua">${CFG.areas.map(A => `<button type="button" class="chip main" ${areaStyle(A.n)} data-a="${esc(A.n)}" onclick="this.classList.toggle('on')">${esc(A.n)}</button>` + pick(A.s, "a")).join("")}</div>
     <label for="usrc">참고한 자료 (있으면)</label><input type="text" id="usrc" placeholder="예: OO 출판사 체육 지도서, 유튜브 'OO 채널' 영상">
     <label for="uty">자료 종류</label><select id="uty">${CFG.types.map(t => `<option>${esc(t)}</option>`).join("")}</select>
-    <label>파일 또는 링크</label><div class="drop"><input type="file" id="uf"><div style="margin-top:6px">또는 유튜브·웹 프로그램 주소 (영상은 유튜브 일부 공개 링크로)</div><input type="text" id="ul" placeholder="https://" style="margin-top:6px"></div>
+    <label>파일과 링크 (둘 중 하나, 또는 둘 다)</label><div class="drop"><input type="file" id="uf"><div style="margin-top:6px">유튜브·웹 프로그램 주소 (프로그램은 주소 + 설명서 PDF를 함께 올리면 좋아요)</div><input type="text" id="ul" placeholder="https://" style="margin-top:6px"></div>
     <label>누가 내려받을 수 있나요?</label><div class="radio">
      <label><input type="radio" name="sc" value="공개" checked>누구나 받기<small>로그인 없이 누구나 내려받아요</small></label>
      <label><input type="radio" name="sc" value="회원">회원만 받기<small>목록은 누구나 보고, 내려받기는 회원만</small></label></div>
