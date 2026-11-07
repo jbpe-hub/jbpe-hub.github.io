@@ -776,7 +776,7 @@ async function buildPdf() {
 
 /* ===== 운영진 관리 ===== */
 function adminView() {
-  const w = AD.members.filter(j => j.s === "대기").length, regN = AD.members.filter(j => j.s === "승인" && j.reg).length;
+  const w = AD.members.filter(j => j.s === "대기").length, regN = AD.members.filter(j => j.s === "승인" && j.reg && !isSysAcct(j)).length;
   const st = s => s === "승인" ? "st-ok" : s === "대기" ? "st-wait" : "st-no";
   return `<div class="panel"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><h3 style="margin:0">회원 (승인 대기 ${w}명)</h3><span style="margin-left:auto;font-size:13px;color:var(--sub)">도 등록 명단 동의 ${regN}명</span><button class="btn mini ok" onclick="copyRoster()">도 등록 명단 복사</button></div>
    <div style="overflow-x:auto"><table class="rt"><tr><th>이름</th><th>소속</th><th>구글 계정</th><th>신청일</th><th>도 명단</th><th>책자 이름</th><th>역할</th><th>상태</th><th></th></tr>
@@ -791,8 +791,9 @@ async function judge(email, status, role) {
   try { busy(true); AD = await api("judge", { email, status, role }); await loadMember(); render(); toast(status === "승인" ? "처리했습니다. 회원 전용 폴더 권한이 맞춰졌어요" : "처리했습니다"); }
   catch (e) { toast(e.message); } finally { busy(false); }
 }
+const isSysAcct = j => j.n === "연구회 공용 계정" || j.sc === "전북초등체육교과연구회";
 function copyRoster() {
-  const t = ["연번\t이름\t소속"].concat(AD.members.filter(j => j.s === "승인" && j.reg).map((j, k) => `${k + 1}\t${j.n}\t${j.sc}`)).join("\n");
+  const t = ["연번\t이름\t소속"].concat(AD.members.filter(j => j.s === "승인" && j.reg && !isSysAcct(j)).map((j, k) => `${k + 1}\t${j.n}\t${j.sc}`)).join("\n");
   copyText(t, "승인·동의한 회원 명단을 복사했습니다. 한글이나 엑셀 표에 붙여 넣으세요");
 }
 
