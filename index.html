@@ -111,8 +111,9 @@ th{color:var(--sub);font-weight:500;font-size:13px;background:#fafbfd}
 .meta{display:grid;grid-template-columns:90px 1fr;gap:6px 10px;font-size:14px;margin:14px 0}
 .meta dt{color:var(--sub)}.meta dd{margin:0}
 .file{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:6px 0}
-.file .ext{width:40px;height:40px;border-radius:9px;background:#eef3fb;color:var(--blue);display:grid;place-items:center;font-weight:900;font-size:12px}
-.file div{flex:1;font-size:14px}.file small{display:block;color:var(--sub)}
+.file .ext{flex:0 0 44px;width:44px;height:40px;border-radius:9px;background:#eef3fb;color:var(--blue);display:grid;place-items:center;font-weight:900;font-size:11px;letter-spacing:-.3px}
+.file div{flex:1 1 auto;min-width:0;font-size:14px;overflow-wrap:anywhere;word-break:break-word}.file small{display:block;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file>.btn{flex:0 0 auto;min-width:92px;text-align:center;justify-content:center;white-space:nowrap}
 .form label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}
 .form input[type=text],.form textarea,.form select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .form textarea{min-height:70px;resize:vertical}
