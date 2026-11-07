@@ -554,7 +554,7 @@ async function watermark(bytes) {
 const validPhone = v => /^01[016789]\d{7,8}$/.test(String(v || "").replace(/[^0-9]/g, ""));
 let phoneAsked = false;
 function askPhone() {
-  if (phoneAsked || !ME || !ME.member || ME.hasPhone !== false) return;
+  if (phoneAsked || !ME || !ME.member || ME.hasPhone !== false || isSysAcct({ n: ME.name, sc: ME.school })) return;
   phoneAsked = true;
   openM(`<h2>연락처를 추가해 주세요</h2><p style="margin:0;color:var(--sub);font-size:14px">내년도 도교육청 교과연구회 등록 서류에 회원 전화번호가 필요해졌어요. 한 번만 적어 주시면 됩니다.</p>
    <div class="form"><label for="pp">휴대전화</label><input type="tel" id="pp" inputmode="numeric" autocomplete="tel" placeholder="예: 010-1234-5678">
@@ -948,7 +948,7 @@ function adminView() {
   const st = s => s === "승인" ? "st-ok" : s === "대기" ? "st-wait" : "st-no";
   return `<div class="panel"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><h3 style="margin:0">회원 (승인 대기 ${w}명)</h3><span style="margin-left:auto;font-size:13px;color:var(--sub)">도 등록 명단 동의 ${regN}명</span><button class="btn mini ok" onclick="copyRoster()">도 등록 명단 복사</button></div>
    <div style="overflow-x:auto"><table class="rt"><tr><th>이름</th><th>소속</th><th>구글 계정</th><th>전화번호</th><th>신청일</th><th>도 명단</th><th>책자 이름</th><th>역할</th><th>상태</th><th></th></tr>
-   ${AD.members.map(j => { const em = JSON.stringify(j.email); return `<tr><td>${esc(j.n)}</td><td>${esc(j.sc)}</td><td>${esc(j.email)}</td><td>${j.phone ? esc(j.phone) : '<span style="color:var(--sub)">없음</span>'}</td><td>${esc(j.dt)}</td><td>${j.reg ? "동의" : "-"}</td><td>${j.book ? "동의" : "-"}</td><td>${esc(j.role)}</td><td><span class="status ${st(j.s)}">${esc(j.s)}</span></td>
+   ${AD.members.map(j => { const em = JSON.stringify(j.email); return `<tr><td>${esc(j.n)}</td><td>${esc(j.sc)}</td><td>${esc(j.email)}</td><td>${isSysAcct(j) ? '<span style="color:var(--sub)">-</span>' : j.phone ? esc(j.phone) : '<span style="color:var(--sub)">없음</span>'}</td><td>${esc(j.dt)}</td><td>${j.reg ? "동의" : "-"}</td><td>${j.book ? "동의" : "-"}</td><td>${esc(j.role)}</td><td><span class="status ${st(j.s)}">${esc(j.s)}</span></td>
     <td style="text-align:right;white-space:nowrap">${j.s !== "승인" ? `<button class="btn mini ok" onclick='judge(${em},"승인")'>승인</button> ` : ""}${j.s === "대기" ? `<button class="btn mini" onclick='judge(${em},"보류")'>보류</button>` : ""}${j.s === "승인" ? `<button class="btn mini" onclick='judge(${em},"승인","${j.role === "운영진" ? "회원" : "운영진"}")'>${j.role === "운영진" ? "운영진 해제" : "운영진으로"}</button> <button class="btn mini" onclick='judge(${em},"보류")'>해제</button>` : ""}</td></tr>`; }).join("")}</table></div>
    <div class="sheetnote">승인하면 회원 전용 드라이브 폴더 보기 권한이 자동으로 주어지고, 해제하면 회수됩니다. 전체 기록은 <a href="${esc(AD.sheetUrl)}" target="_blank" rel="noopener">관리 시트</a>에서 볼 수 있어요.</div></div>
    <div class="panel"><h3>내려받기 기록 (최근 30건)</h3>${AD.log.length ? `<table class="rt"><tr><th>일시</th><th>선생님</th><th>자료</th></tr>${AD.log.map(l => `<tr><td>${esc(l.at)}</td><td>${esc(l.n)}</td><td>${esc(l.t)}</td></tr>`).join("")}</table>` : '<p style="color:var(--sub)">아직 기록이 없습니다.</p>'}</div>
