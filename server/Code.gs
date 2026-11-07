@@ -371,6 +371,25 @@ function updateItem_(u, req) {
     }
   }
   if (req.hide) patch['상태'] = '숨김';
+  if (req.edit) {
+    var e = req.edit;
+    if (!e.t) throw new Error('자료 이름을 적어 주세요.');
+    patch['제목'] = e.t; patch['설명'] = e.d || ''; patch['학년'] = (e.g || []).join(','); patch['영역'] = (e.a || []).join(',');
+    patch['종류'] = e.ty || ''; patch['참고자료'] = e.src || ''; patch['링크'] = e.link || '';
+    var mem = (patch['공개범위'] || r['공개범위']) === '회원';
+    var oldId = r['파일ID'];
+    if (req.b64) {
+      var nf = DriveApp.getFolderById(mem ? P_('MEM_ID') : P_('PUB_ID')).createFile(decode_(req.b64, req.mime, req.name));
+      if (!mem) nf.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      patch['파일ID'] = nf.getId(); patch['파일이름'] = req.name;
+      if (oldId) { try { DriveApp.getFileById(oldId).setTrashed(true); } catch (x) {} }
+    } else if (e.removeFile && oldId) {
+      try { DriveApp.getFileById(oldId).setTrashed(true); } catch (x) {}
+      patch['파일ID'] = ''; patch['파일이름'] = '';
+    }
+    var hasFile = ('파일ID' in patch) ? !!patch['파일ID'] : !!oldId;
+    if (!hasFile && !e.link) throw new Error('파일이나 링크가 하나는 있어야 합니다.');
+  }
   update_('자료', r, patch);
   refreshSite_();
   return {};
