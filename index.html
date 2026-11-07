@@ -297,7 +297,7 @@ async function login() {
   try { await AUTH.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
   catch (e) { if (e.code !== "auth/popup-closed-by-user") toast("로그인하지 못했어요: " + (e.message || e.code)); }
 }
-async function logout() { await AUTH.signOut(); ME = null; MD = null; AD = null; if (["mine", "admin"].includes(view)) go("public"); render(); }
+async function logout() { clearCache(); await AUTH.signOut(); ME = null; MD = null; AD = null; if (["mine", "admin"].includes(view)) go("public"); render(); }
 
 /* ===== 서버 호출 ===== */
 const apiReady = () => API_URL && !API_URL.startsWith("__");
@@ -315,18 +315,30 @@ async function loadPublic(fresh) {
   if ((!j || !j.ok) && apiReady()) { try { j = await (await fetch(API_URL + "?action=publicList")).json(); } catch (e) {} }
   if (j && j.ok) { CFG = j.config; PUB = j.items; if (!bookTitle) bookTitle = CFG.bookTitle || "연구회 수업 자료집"; }
 }
-async function loadMember() { if (isMember()) { MD = await api("memberData"); } }
+async function loadMember() { if (isMember()) { MD = await api("memberData"); if (AUTH.currentUser) saveCache(AUTH.currentUser.uid); } }
 async function loadAdmin() { if (isAdmin()) { AD = await api("adminData"); } }
 async function reloadAll(fresh = true) { await loadPublic(fresh); if (isMember()) await loadMember(); if (isAdmin() && view === "admin") await loadAdmin(); render(); }
 
+/* 이 기기에서 로그인 유지 + 새로 고침 때 바로 보이도록 마지막 상태를 기억 */
+try { AUTH.setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch (e) {}
+let authReady = false;
+const CK = uid => "jbpe_cache_" + uid;
+function saveCache(uid) { try { localStorage.setItem(CK(uid), JSON.stringify({ ME, MD, at: Date.now() })); } catch (e) {} }
+function readCache(uid) { try { const c = JSON.parse(localStorage.getItem(CK(uid)) || "null"); return c && Date.now() - c.at < 14 * 864e5 ? c : null; } catch (e) { return null; } }
+function clearCache() { try { Object.keys(localStorage).filter(k => k.startsWith("jbpe_cache_")).forEach(k => localStorage.removeItem(k)); } catch (e) {} }
+
 AUTH.onAuthStateChanged(async user => {
+  authReady = true;
   if (!user) { ME = null; MD = null; render(); return; }
+  const c = readCache(user.uid);
+  if (c && c.ME) { ME = c.ME; MD = c.MD; render(); }   // 기억해 둔 화면을 먼저 보여 주고
   try {
-    ME = (await api("me")).me;
+    ME = (await api("me")).me;                           // 서버에서 최신 정보로 바꾸기
     if (ME.status === "없음") { render(); openJoin(); return; }
     await loadMember();
     if (view === "admin") await loadAdmin();
-  } catch (e) { toast(e.message); }
+    saveCache(user.uid);
+  } catch (e) { if (!c) toast(e.message); }
   render();
 });
 
@@ -341,7 +353,8 @@ const mainArea = it => AREA_MAIN().find(n => it.a.includes(n)) || "기타";
 /* ===== 머리 · 메뉴 ===== */
 function header() {
   const h = $("#hright");
-  if (!ME) h.innerHTML = `<button class="btn ghost" onclick="openJoin()">가입 신청</button><button class="btn primary" onclick="login()">구글 계정으로 로그인</button>`;
+  if (!ME && !authReady) h.innerHTML = `<span class="who">로그인 확인 중…</span>`;
+  else if (!ME) h.innerHTML = `<button class="btn ghost" onclick="openJoin()">가입 신청</button><button class="btn primary" onclick="login()">구글 계정으로 로그인</button>`;
   else {
     const st = ME.member ? "" : `<span class="status-pill">${ME.status === "대기" ? "승인 대기 중" : ME.status === "보류" ? "가입 보류" : "가입 전"}</span>`;
     h.innerHTML = `<span class="who">${ME.admin ? "운영진 " : ""}${esc(ME.name || ME.email)}${ME.name ? " 선생님" : ""}${st}</span>${ME.member ? `<button class="btn primary" onclick="openUpload()">자료 올리기</button>` : (ME.status === "없음" || ME.status === "보류" ? `<button class="btn primary" onclick="openJoin()">가입 신청</button>` : "")}<button class="btn ghost" onclick="logout()">로그아웃</button>`;
