@@ -867,7 +867,7 @@ function chatStart() {
   const iRef = db.ref("inbox/" + me); iRef.on("value", s => { CHAT.inbox = s.val() || {}; chatBadge(); chatPaint(); }, fail); CHAT.refs.push(iRef);
   const rRef = db.ref("room").orderByChild("t").limitToLast(150);
   rRef.on("child_added", s => { CHAT.room.push({ id: s.key, ...s.val() }); if (CHAT.active === "room") chatAppend(); });
-  rRef.on("child_removed", s => { CHAT.room = CHAT.room.filter(m => m.id !== s.key); if (CHAT.active === "room") chatPaint(); });
+  rRef.on("child_removed", s => { CHAT.room = CHAT.room.filter(m => m.id !== s.key); if (CHAT.active === "room") chatAppend(); });
   CHAT.refs.push(rRef);
   meetStart();
 }
@@ -914,7 +914,17 @@ async function chatSend() {
     }
   } catch (e) { inp.value = x; toast("보내지 못했어요: " + (e.message || e.code)); }
 }
-async function delRoomMsg(id) { try { await CHAT.db.ref("room/" + id).remove(); } catch (e) { toast("지우지 못했어요"); } }
+function delRoomMsg(id) {
+  const m = CHAT.room.find(x => x.id === id); if (!m) return;
+  const other = m.uid !== CHAT.uid;
+  openM(`<h2>메시지를 지울까요?</h2><p style="margin:0 0 10px;color:var(--sub);font-size:14px">${other ? `${esc(m.n)} 선생님이 쓴 메시지를 운영진 권한으로 지웁니다. ` : ""}지운 메시지는 되돌릴 수 없어요.</p>
+   <div class="bubble" style="display:block;max-height:140px;overflow:auto">${esc(m.x)}</div>
+   <div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" style="background:#c0392b;border-color:#c0392b" onclick='doDelRoomMsg(${JSON.stringify(id)})'>지우기</button></div>`);
+}
+async function doDelRoomMsg(id) {
+  try { await CHAT.db.ref("room/" + id).remove(); CHAT.room = CHAT.room.filter(x => x.id !== id); closeM(); chatAppend(); toast("메시지를 지웠어요"); }
+  catch (e) { closeM(); toast("지우지 못했어요. 잠시 뒤 다시 해 주세요"); }
+}
 
 function msgHTML(m) {
   const mine = m.uid === CHAT.uid, adminDel = CHAT.active === "room" && (mine || isAdmin());
