@@ -245,8 +245,8 @@ footer .flogo{display:inline-block;vertical-align:middle;margin-right:6px;line-h
   <div class="hright" id="hright"></div>
 </div></header>
 <nav><div class="nwrap">
-  <a href="#public" data-v="public">공개 자료실</a>
-  <a href="#members" data-v="members">회원 전용 자료방<span class="lock" id="lockTag">회원</span></a>
+  <a href="#public" data-v="public">자료실</a>
+  <a href="#members" data-v="members">회원 공간<span class="lock" id="lockTag">회원</span></a>
   <a href="#mine" data-v="mine" id="navMine">내가 올린 자료</a>
   <a href="#admin" data-v="admin" id="navAdmin">운영진 관리</a>
 </div></nav>
@@ -278,8 +278,8 @@ let PUB = [];          // 공개 목록(손님용)
 let ME = null;         // 로그인한 사람 정보
 let MD = null;         // 회원 데이터(회원만)
 let AD = null;         // 운영진 데이터
-let view = "public", msub = "files", calM = new Date();
-let f = { q: "", g: [], a: [], ty: [], sort: "new" };
+let view = "public", msub = "cal", calM = new Date();
+let f = { q: "", g: [], a: [], ty: [], dl: [], sort: "new" };
 let bookSel = new Set(), bookTitle = "", bookMine = false;
 calM = new Date(calM.getFullYear(), calM.getMonth(), 1);
 
@@ -374,6 +374,7 @@ function match(it) {
   if (f.g.length && !f.g.some(x => it.g.includes(x))) return false;
   if (f.a.length && !f.a.some(x => it.a.includes(x))) return false;
   if (f.ty.length && !f.ty.includes(it.ty)) return false;
+  if (f.dl.length && !f.dl.includes(it.m ? "회원만 받기" : "누구나 받기")) return false;
   return true;
 }
 function tog(k, x) { const i = f[k].indexOf(x); i < 0 ? f[k].push(x) : f[k].splice(i, 1); render(); }
@@ -384,13 +385,14 @@ function filters() {
    <h4>영역</h4>
    ${CFG.areas.map(A => `<div class="area-group"><button class="chip main ${f.a.includes(A.n) ? "on" : ""}" ${areaStyle(A.n)} onclick='tog("a",${JSON.stringify(A.n)})'>${esc(A.n)}</button>${A.s.length ? `<div class="subs">${chipRow(A.s, "a")}</div>` : ""}</div>`).join("")}
    <h4>자료 종류</h4><div class="chips">${chipRow(CFG.types, "ty")}</div>
-   <button class="btn reset" onclick="f={q:'',g:[],a:[],ty:[],sort:f.sort};render()">필터 모두 지우기</button>
+   <h4>내려받기</h4><div class="chips">${chipRow(["누구나 받기", "회원만 받기"], "dl")}</div>
+   <button class="btn reset" onclick="f={q:'',g:[],a:[],ty:[],dl:[],sort:f.sort};render()">필터 모두 지우기</button>
   </aside>`;
 }
 function card(it) {
   const isNew = (new Date(TODAY) - new Date(it.dt)) / 864e5 < 7;
   return `<div class="card" onclick='openItem(${JSON.stringify(it.id)})'>
-   <div class="ctop"><span class="type">${esc(it.ty)}</span>${it.m ? `<span class="memb">${isMember() ? "회원 전용" : "회원 전용 · 내려받기 잠김"}</span>` : ""}${isNew ? '<span class="new">NEW</span>' : ""}</div>
+   <div class="ctop"><span class="type">${esc(it.ty)}</span>${it.m ? `<span class="memb">${isMember() ? "회원만 받기" : "회원만 받기 · 잠김"}</span>` : ""}${isNew ? '<span class="new">NEW</span>' : ""}</div>
    <h3>${esc(it.t)}</h3><p>${esc(it.d)}</p>
    <div class="tags">${it.g.map(g => `<span class="tag">${esc(g)}</span>`).join("")}${it.a.map(a => `<span class="tag ${isAiTag(a) ? "ai" : ""}">${esc(a)}</span>`).join("")}</div>
    <div class="cfoot"><span>${esc(it.by)} · ${esc(it.sc)}</span><span>${esc((it.dt || "").slice(5).replace("-", "."))} · 조회 ${it.v}</span></div></div>`;
@@ -413,16 +415,19 @@ function listView(src, title, desc) {
 function render() {
   header();
   const m = $("#main");
-  if (view === "public") m.innerHTML = listView(allItems().filter(i => !i.m), "공개 자료실", "누구나 로그인 없이 보고 내려받을 수 있는 연구회 수업 자료입니다.");
+  if (view === "public") {
+    const lockedN = allItems().filter(i => i.m).length;
+    m.innerHTML = (!isMember() && lockedN ? `<div class="guestbar"><div><b>"회원만 받기" 자료 ${lockedN}개</b>는 연구회 회원이 되면 내려받을 수 있어요. 목록과 설명은 누구나 볼 수 있고, 산출물 제출 의무 없이 가입할 수 있습니다.</div>${ME ? "" : `<button class="btn" onclick="login()">로그인</button>`}${!ME || ME.status === "없음" ? `<button class="btn primary" onclick="openJoin()">가입 신청</button>` : `<span class="status-pill">${ME.status === "대기" ? "승인 대기 중" : "가입 " + esc(ME.status)}</span>`}</div>` : "")
+      + listView(allItems(), "자료실", "연구회 선생님들이 함께 만들고 나누는 수업 자료입니다. 자료마다 누구나 받을 수 있는지, 회원만 받을 수 있는지 표시되어 있어요.");
+  }
   else if (view === "members") {
-    if (!isMember() && msub === "files") m.innerHTML = memberTabs() + `<div class="guestbar"><div><b>회원 전용 자료방 미리 보기</b><br>목록과 설명은 누구나 볼 수 있고, 내려받기는 회원만 할 수 있어요. 산출물 제출 의무 없이 가입할 수 있습니다.</div>${ME ? "" : `<button class="btn" onclick="login()">로그인</button>`}${!ME || ME.status === "없음" ? `<button class="btn primary" onclick="openJoin()">가입 신청</button>` : `<span class="status-pill">${ME.status === "대기" ? "승인 대기 중" : "가입 " + esc(ME.status)}</span>`}</div>` + listView(allItems().filter(i => i.m), "회원 전용 자료", "연구회 선생님들이 회원끼리 먼저 나누는 자료입니다.");
-    else if (!isMember()) m.innerHTML = memberTabs() + `<div class="gate"><div class="gicon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b5651d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h2>회원만 볼 수 있어요</h2><p>자율연수 일정, 공지, 산출물 책자는 승인된 회원에게만 열립니다.<br>산출물 제출 의무 없이 가입할 수 있어요.</p>${ME ? "" : `<button class="btn primary" onclick="login()">구글 계정으로 로그인</button> `}<button class="btn" onclick="openJoin()">가입 신청</button></div>`;
-    else m.innerHTML = memberTabs() + (msub === "files" ? listView(MD.items.filter(i => i.m), "회원 전용 자료", "승인된 회원만 내려받을 수 있는 자료입니다. 외부로 옮기거나 공유하지 말아 주세요.") : msub === "cal" ? calView() : msub === "notice" ? noticeView() : bookView());
+    if (!isMember()) m.innerHTML = memberTabs() + `<div class="gate"><div class="gicon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b5651d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h2>회원만 볼 수 있어요</h2><p>자율연수 일정, 공지, 산출물 책자는 승인된 회원에게만 열립니다.<br>산출물 제출 의무 없이 가입할 수 있어요.</p>${ME ? "" : `<button class="btn primary" onclick="login()">구글 계정으로 로그인</button> `}<button class="btn" onclick="openJoin()">가입 신청</button></div>`;
+    else m.innerHTML = memberTabs() + (msub === "cal" ? calView() : msub === "notice" ? noticeView() : bookView());
   }
   else if (view === "mine") {
     if (!isMember()) { go("public"); return render(); }
     const mine = MD.items.filter(i => i.own);
-    m.innerHTML = `<div class="panel"><h3>내가 올린 자료 (${mine.length})</h3>${mine.length ? `<table class="rt"><tr><th>자료</th><th>공개 범위</th><th>올린 날</th><th>조회</th><th></th></tr>${mine.map(i => `<tr><td>${esc(i.t)}</td><td>${i.m ? '<span class="status st-wait">회원 전용</span>' : '<span class="status st-ok">공개</span>'}</td><td>${esc(i.dt)}</td><td>${i.v}</td><td style="text-align:right"><button class="btn mini" onclick='flip(${JSON.stringify(i.id)})'>${i.m ? "공개로 전환" : "회원 전용으로"}</button> <button class="btn mini" onclick='hideItem(${JSON.stringify(i.id)})'>내리기</button></td></tr>`).join("")}</table>` : '<p style="color:var(--sub)">아직 올린 자료가 없습니다.</p>'}</div>`;
+    m.innerHTML = `<div class="panel"><h3>내가 올린 자료 (${mine.length})</h3>${mine.length ? `<table class="rt"><tr><th>자료</th><th>내려받기</th><th>올린 날</th><th>조회</th><th></th></tr>${mine.map(i => `<tr><td>${esc(i.t)}</td><td>${i.m ? '<span class="status st-wait">회원만</span>' : '<span class="status st-ok">누구나</span>'}</td><td>${esc(i.dt)}</td><td>${i.v}</td><td style="text-align:right"><button class="btn mini" onclick='flip(${JSON.stringify(i.id)})'>${i.m ? "누구나 받기로" : "회원만 받기로"}</button> <button class="btn mini" onclick='hideItem(${JSON.stringify(i.id)})'>내리기</button></td></tr>`).join("")}</table>` : '<p style="color:var(--sub)">아직 올린 자료가 없습니다.</p>'}</div>`;
   }
   else if (view === "admin") {
     if (!isAdmin()) { go("public"); return render(); }
@@ -455,12 +460,12 @@ function openItem(id) {
   if (ME) api("view", { id }).catch(() => {});
   const locked = it.m && !isMember();
   const kind = it.link && !it.hasFile ? (it.ty === "영상" ? "영상 링크" : "웹 주소") : "파일";
-  openM(`<div class="ctop"><span class="type">${esc(it.ty)}</span>${it.m ? '<span class="memb">회원 전용</span>' : ""}</div>
+  openM(`<div class="ctop"><span class="type">${esc(it.ty)}</span>${it.m ? '<span class="memb">회원만 받기</span>' : ""}</div>
    <h2 style="margin-top:8px">${esc(it.t)}</h2><p style="margin:0;color:#475467;white-space:pre-line">${esc(it.d)}</p>
    <dl class="meta"><dt>대상 학년</dt><dd>${esc(it.g.join(", "))}</dd><dt>영역</dt><dd>${esc(it.a.join(", "))}</dd><dt>올린 선생님</dt><dd>${esc(it.by)} (${esc(it.sc)})</dd><dt>올린 날</dt><dd>${esc(it.dt)}</dd><dt>조회</dt><dd>${it.v}</dd></dl>
    <div class="file"><span class="ext">${it.hasFile ? "FILE" : "LINK"}</span><div>${esc(it.fname || it.t)}<small>${kind}</small></div>
    ${locked ? `<button class="btn" onclick="closeM();openJoin()">회원만 내려받기</button>` : `<button class="btn primary" onclick='getFile(${JSON.stringify(it.id)})'>${it.hasFile ? "내려받기" : "열기"}</button>`}</div>
-   ${locked ? `<div class="box2" style="margin-top:10px">회원 전용 자료는 <b>회원이 되면 내려받을 수 있어요.</b> 산출물 제출 의무 없이 가입할 수 있습니다.</div>` : ""}
+   ${locked ? `<div class="box2" style="margin-top:10px">이 자료는 <b>회원이 되면 내려받을 수 있어요.</b> 산출물 제출 의무 없이 가입할 수 있습니다.</div>` : ""}
    ${it.src ? `<p style="font-size:13px;margin:10px 0 0"><b>참고한 자료</b> ${esc(it.src)}</p>` : ""}
    <div class="lic">이용 조건: 출처 표시 · 비영리 · 고쳐 쓰면 출처 밝히기${it.m ? " · 회원 외 배포 금지" : ""}</div>
    <div class="cite"><div><b>출처 표기</b><span id="citeTxt">${esc(citeOf(it))}</span></div><button class="btn mini" onclick="copyText($('#citeTxt').textContent,'출처를 복사했습니다')">출처 복사</button></div>`);
@@ -540,7 +545,7 @@ async function openJoin() {
   if (!ME) { await login(); return; }
   if (ME.status === "대기") { toast("가입 신청이 접수되어 운영진 승인을 기다리고 있어요"); return; }
   if (ME.member) { toast("이미 회원입니다"); return; }
-  openM(`<h2>회원 가입 신청</h2><p style="margin:0;color:var(--sub);font-size:14px">${esc(ME.email)} 계정으로 신청합니다. 운영진 승인 후 회원 전용 자료방의 자료를 내려받을 수 있어요.</p>
+  openM(`<h2>회원 가입 신청</h2><p style="margin:0;color:var(--sub);font-size:14px">${esc(ME.email)} 계정으로 신청합니다. 운영진 승인 후 "회원만 받기" 자료를 내려받고 회원 공간을 쓸 수 있어요.</p>
    <div class="box2"><b>산출물 제출 의무는 없습니다.</b> 자료를 올리지 않아도 회원이 될 수 있어요. 대신 연말 산출물 책자에 <b>참여 회원으로 이름을 올려</b> 주시면 연구회에 큰 힘이 됩니다.</div>
    <div class="box3">가입하시면 <b>내년도 전북특별자치도교육청 교과연구회 등록 때 회원 명단</b>에 이름과 소속 학교가 들어갈 수 있습니다. 명단에는 이름·소속·전화번호가 들어가며, 원하지 않으시면 아래 체크를 풀어 주세요.</div>
    <div class="form"><label for="jn">이름</label><input type="text" id="jn" placeholder="예: 홍길동"><label for="js">소속 학교</label><input type="text" id="js" placeholder="예: 햇살초등학교">
@@ -557,7 +562,7 @@ async function sendJoin() {
   if (!name || !school) { $("#jerr").textContent = "이름과 소속을 적어 주세요."; return; }
   if (!validPhone(phone)) { $("#jerr").textContent = "휴대전화 번호를 확인해 주세요. (예: 010-1234-5678)"; return; }
   if (!$("#jc").checked) { $("#jerr").textContent = "회원 자료 이용 약속에 체크해 주세요."; return; }
-  try { busy(true); ME = (await api("join", { name, school, phone, book: $("#jnm").checked, reg: $("#jreg").checked })).me; closeM(); render(); toast("가입 신청을 보냈습니다. 운영진이 승인하면 회원 전용 자료방이 열려요"); }
+  try { busy(true); ME = (await api("join", { name, school, phone, book: $("#jnm").checked, reg: $("#jreg").checked })).me; closeM(); render(); toast("가입 신청을 보냈습니다. 운영진이 승인하면 회원만 받기 자료와 회원 공간이 열려요"); }
   catch (e) { $("#jerr").textContent = e.message; } finally { busy(false); }
 }
 
@@ -568,15 +573,15 @@ function openUpload() {
   openM(`<h2>자료 올리기</h2>
    <div class="form">
     <label for="ut">자료 이름</label><input type="text" id="ut" placeholder="예: 5학년 전략형 게임 수업 지도안">
-    <label for="ud">설명</label><textarea id="ud" placeholder="어떤 수업에서 어떻게 쓰는 자료인지 짧게 적어 주세요. 회원 전용 자료도 제목과 설명은 누구나 볼 수 있으니 내부 사정은 적지 말아 주세요."></textarea>
+    <label for="ud">설명</label><textarea id="ud" placeholder="어떤 수업에서 어떻게 쓰는 자료인지 짧게 적어 주세요. 회원만 받기 자료도 제목과 설명은 누구나 볼 수 있으니 내부 사정은 적지 말아 주세요."></textarea>
     <label>대상 학년 (여러 개 선택)</label><div class="pick" id="ug">${pick(CFG.grades, "g")}</div>
     <label>영역 (여러 개 선택)</label><div class="pick" id="ua">${CFG.areas.map(A => `<button type="button" class="chip main" ${areaStyle(A.n)} data-a="${esc(A.n)}" onclick="this.classList.toggle('on')">${esc(A.n)}</button>` + pick(A.s, "a")).join("")}</div>
     <label for="usrc">참고한 자료 (있으면)</label><input type="text" id="usrc" placeholder="예: OO 출판사 체육 지도서, 유튜브 'OO 채널' 영상">
     <label for="uty">자료 종류</label><select id="uty">${CFG.types.map(t => `<option>${esc(t)}</option>`).join("")}</select>
     <label>파일 또는 링크</label><div class="drop"><input type="file" id="uf"><div style="margin-top:6px">또는 유튜브·웹 프로그램 주소 (영상은 유튜브 일부 공개 링크로)</div><input type="text" id="ul" placeholder="https://" style="margin-top:6px"></div>
-    <label>공개 범위</label><div class="radio">
-     <label><input type="radio" name="sc" value="공개" checked>공개 자료실<small>누구나 볼 수 있어요</small></label>
-     <label><input type="radio" name="sc" value="회원">회원 전용 자료방<small>내려받기는 회원만</small></label></div>
+    <label>누가 내려받을 수 있나요?</label><div class="radio">
+     <label><input type="radio" name="sc" value="공개" checked>누구나 받기<small>로그인 없이 누구나 내려받아요</small></label>
+     <label><input type="radio" name="sc" value="회원">회원만 받기<small>목록은 누구나 보고, 내려받기는 회원만</small></label></div>
     <label class="check"><input type="checkbox" id="c1"> 학생 얼굴이 알아보이는 사진·영상이나 학생 실명이 들어 있지 않습니다.</label>
     <label class="check"><input type="checkbox" id="c2"> 교과서·출판사 자료 등 다른 사람의 저작물 원본이 아닙니다.</label>
    </div><div class="err" id="uerr"></div>
@@ -597,22 +602,22 @@ async function sendUpload() {
     const payload = { item: { t, d, g, a, ty: $("#uty").value, src: $("#usrc").value.trim(), link, scope } };
     if (file) Object.assign(payload, { b64: await fileToB64(file), name: file.name, mime: file.type });
     await api("upload", payload);
-    closeM(); go(scope === "회원" ? "members" : "public"); msub = "files";
+    closeM(); go("public");
     await reloadAll(true);
-    toast(scope === "회원" ? "회원 전용 자료방에 올렸습니다" : "공개 자료실에 올렸습니다");
+    toast(scope === "회원" ? "자료실에 올렸습니다 (회원만 받기)" : "자료실에 올렸습니다 (누구나 받기)");
   } catch (e) { err.textContent = e.message; } finally { busy(false); }
 }
 async function flip(id) {
   const it = MD.items.find(x => x.id === id);
-  try { busy(true); await api("updateItem", { id, scope: it.m ? "공개" : "회원" }); await reloadAll(true); toast("공개 범위를 바꿨습니다"); } catch (e) { toast(e.message); } finally { busy(false); }
+  try { busy(true); await api("updateItem", { id, scope: it.m ? "공개" : "회원" }); await reloadAll(true); toast("내려받기 범위를 바꿨습니다"); } catch (e) { toast(e.message); } finally { busy(false); }
 }
 async function hideItem(id) {
   try { busy(true); await api("updateItem", { id, hide: true }); await reloadAll(true); toast("목록에서 내렸습니다 (파일은 드라이브에 남아 있어요)"); } catch (e) { toast(e.message); } finally { busy(false); }
 }
 
-/* ===== 회원 전용 자료방 탭 ===== */
+/* ===== 회원 공간 탭 ===== */
 function memberTabs() {
-  const T = [["files", "자료"], ["cal", "자율연수 일정"], ["notice", "공지"], ["book", "산출물 책자"]];
+  const T = [["cal", "자율연수 일정"], ["notice", "공지"], ["book", "산출물 책자"]];
   return `<div class="subtabs">${T.map(([k, n]) => `<button class="${msub === k ? "on" : ""}" onclick="msub='${k}';render()">${n}${k === "notice" && MD ? `<span class="cnt">${MD.notices.length}</span>` : ""}</button>`).join("")}</div>`;
 }
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
@@ -693,7 +698,7 @@ function bookView() {
      if (ms && i.canEdit) b.push(`<button class="btn mini" onclick='event.preventDefault();msAct("removeMs",${id})'>빼기</button>`);
      if (ms && isAdmin()) b.push(`<button class="btn mini ${ms.st === "ok" ? "" : "ok"}" onclick='event.preventDefault();msAct("reviewMs",${id},${ms.st !== "ok"})'>${ms.st === "ok" ? "검토 취소" : "검토 완료"}</button>`);
      return `<label class="bookrow"><input type="checkbox" ${bookSel.has(i.id) ? "checked" : ""} onchange='this.checked?bookSel.add(${id}):bookSel.delete(${id});render()'>
-     <div class="info"><b>${esc(i.t)}</b> ${i.m ? '<span class="memb">회원 전용</span>' : ""}<br><small>${esc(mainArea(i))} · ${esc(i.ty)} · ${esc(i.by)}${ms ? ` · 원고 ${ms.pages}쪽 (${esc((ms.dt || "").slice(5).replace("-", "."))} 제출)` : ""}</small></div>
+     <div class="info"><b>${esc(i.t)}</b> ${i.m ? '<span class="memb">회원만 받기</span>' : ""}<br><small>${esc(mainArea(i))} · ${esc(i.ty)} · ${esc(i.by)}${ms ? ` · 원고 ${ms.pages}쪽 (${esc((ms.dt || "").slice(5).replace("-", "."))} 제출)` : ""}</small></div>
      ${badge}<span style="white-space:nowrap">${b.join(" ")}</span></label>`; }).join("") || '<p style="color:var(--sub)">아직 자료가 없습니다.</p>'}
    <input type="file" id="msFile" accept="application/pdf,.pdf" style="display:none" onchange="gotMs(this)">
   </div>`;
@@ -745,7 +750,7 @@ function pageHTML(P, B) {
   if (P.k === "div") return `<div class="page bdiv"><div class="dnum">${String(B.groups.indexOf(P.g) + 1).padStart(2, "0")}</div><div class="dname">${esc(P.g.n)}</div><div class="dlist">${P.g.list.map(i => `<div>${esc(i.t)} · ${esc(i.by)}</div>`).join("")}</div>${pno}</div>`;
   if (P.k === "sum") return `<div class="page"><div class="bhead">${esc(bookTitle)} · ${esc(P.area)}</div>${P.list.map(i => `<div class="bitem"><div class="bsec">${esc(i.a.join(" · "))}</div><h3>${esc(i.t)}</h3>
     <table><tr><th>대상 학년</th><td>${esc(i.g.join(", "))}</td><th>자료 종류</th><td>${esc(i.ty)}</td></tr><tr><th>만든 선생님</th><td colspan="3">${esc(i.by)} (${esc(i.sc)})</td></tr></table>
-    <div style="white-space:pre-line">${esc(i.d)}</div><div class="link">자료 위치: 전북초등체육교과연구회 자료실 ${i.m ? "회원 전용 자료방" : "공개 자료실"} · ${esc(i.dt)} 등록</div></div>`).join("")}${pno}</div>`;
+    <div style="white-space:pre-line">${esc(i.d)}</div><div class="link">자료 위치: 전북초등체육교과연구회 자료실${i.m ? " (회원만 받기)" : ""} · ${esc(i.dt)} 등록</div></div>`).join("")}${pno}</div>`;
   if (P.k === "ms") return `<div class="page msph"><div class="bhead">${esc(bookTitle)} · ${esc(P.area)}</div><div class="mscard"><div class="msico">PDF</div><b>${esc(P.it.t)}</b><span>${esc(P.it.by)} 선생님 원고 · ${P.p + 1} / ${P.it.ms.pages}쪽</span><small>합친 PDF에는 이 자리에 원고 원본 쪽이 그대로 들어갑니다</small></div>${pno}</div>`;
 }
 function makeBook() {
@@ -807,8 +812,8 @@ function adminView() {
     <td style="text-align:right;white-space:nowrap">${j.s !== "승인" ? `<button class="btn mini ok" onclick='judge(${em},"승인")'>승인</button> ` : ""}${j.s === "대기" ? `<button class="btn mini" onclick='judge(${em},"보류")'>보류</button>` : ""}${j.s === "승인" ? `<button class="btn mini" onclick='judge(${em},"승인","${j.role === "운영진" ? "회원" : "운영진"}")'>${j.role === "운영진" ? "운영진 해제" : "운영진으로"}</button> <button class="btn mini" onclick='judge(${em},"보류")'>해제</button>` : ""}</td></tr>`; }).join("")}</table></div>
    <div class="sheetnote">승인하면 회원 전용 드라이브 폴더 보기 권한이 자동으로 주어지고, 해제하면 회수됩니다. 전체 기록은 <a href="${esc(AD.sheetUrl)}" target="_blank" rel="noopener">관리 시트</a>에서 볼 수 있어요.</div></div>
    <div class="panel"><h3>내려받기 기록 (최근 30건)</h3>${AD.log.length ? `<table class="rt"><tr><th>일시</th><th>선생님</th><th>자료</th></tr>${AD.log.map(l => `<tr><td>${esc(l.at)}</td><td>${esc(l.n)}</td><td>${esc(l.t)}</td></tr>`).join("")}</table>` : '<p style="color:var(--sub)">아직 기록이 없습니다.</p>'}</div>
-   <div class="panel"><h3>자료 관리</h3><p style="margin:0;font-size:14px;color:var(--sub)">운영진은 모든 자료의 공개 범위를 바꾸거나 목록에서 내릴 수 있어요. 분류 목록(학년·영역·자료 종류)과 책자 제목은 관리 시트 "설정" 탭에서 고칩니다.</p>
-   <div style="overflow-x:auto;margin-top:10px"><table class="rt"><tr><th>자료</th><th>올린 선생님</th><th>공개 범위</th><th></th></tr>${(MD ? MD.items : []).slice().sort((a, b) => b.dt.localeCompare(a.dt)).map(i => `<tr><td>${esc(i.t)}</td><td>${esc(i.by)}</td><td>${i.m ? '<span class="status st-wait">회원 전용</span>' : '<span class="status st-ok">공개</span>'}</td><td style="text-align:right;white-space:nowrap"><button class="btn mini" onclick='flip(${JSON.stringify(i.id)})'>${i.m ? "공개로 전환" : "회원 전용으로"}</button> <button class="btn mini" onclick='hideItem(${JSON.stringify(i.id)})'>내리기</button></td></tr>`).join("")}</table></div></div>`;
+   <div class="panel"><h3>자료 관리</h3><p style="margin:0;font-size:14px;color:var(--sub)">운영진은 모든 자료의 내려받기 범위를 바꾸거나 목록에서 내릴 수 있어요. 분류 목록(학년·영역·자료 종류)과 책자 제목은 관리 시트 "설정" 탭에서 고칩니다.</p>
+   <div style="overflow-x:auto;margin-top:10px"><table class="rt"><tr><th>자료</th><th>올린 선생님</th><th>내려받기</th><th></th></tr>${(MD ? MD.items : []).slice().sort((a, b) => b.dt.localeCompare(a.dt)).map(i => `<tr><td>${esc(i.t)}</td><td>${esc(i.by)}</td><td>${i.m ? '<span class="status st-wait">회원만</span>' : '<span class="status st-ok">누구나</span>'}</td><td style="text-align:right;white-space:nowrap"><button class="btn mini" onclick='flip(${JSON.stringify(i.id)})'>${i.m ? "누구나 받기로" : "회원만 받기로"}</button> <button class="btn mini" onclick='hideItem(${JSON.stringify(i.id)})'>내리기</button></td></tr>`).join("")}</table></div></div>`;
 }
 async function judge(email, status, role) {
   try { busy(true); AD = await api("judge", { email, status, role }); await loadMember(); render(); toast(status === "승인" ? "처리했습니다. 회원 전용 폴더 권한이 맞춰졌어요" : "처리했습니다"); }
