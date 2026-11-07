@@ -13,7 +13,7 @@ var MAX_UPLOAD_MB = 20;
 
 var SHEETS = {
   '자료': ['id','제목','설명','학년','영역','종류','공개범위','파일ID','파일이름','링크','참고자료','올린이메일','올린이','소속','등록일','조회','상태','원고파일ID','원고쪽수','원고상태','원고제출일'],
-  '회원': ['이메일','이름','소속','신청일','상태','역할','책자이름동의','도명단동의','처리일','전화번호'],
+  '회원': ['이메일','이름','소속','신청일','상태','역할','책자이름동의','도명단동의','처리일','전화번호','uid'],
   '일정': ['id','날짜','시간','제목','장소','큰행사','참석'],
   '공지': ['id','제목','내용','작성자','작성일','고정'],
   '댓글': ['id','공지id','작성자이메일','작성자','내용','작성일'],
@@ -129,15 +129,15 @@ function verify_(token) {
   var cache = CacheService.getScriptCache();
   var key = 'tk_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token)).slice(0, 40);
   var hit = cache.get(key);
-  if (hit) return hit;
+  if (hit) return JSON.parse(hit);
   var res = UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + FIREBASE_API_KEY, {
     method: 'post', contentType: 'application/json', payload: JSON.stringify({ idToken: token }), muteHttpExceptions: true
   });
   var j = JSON.parse(res.getContentText() || '{}');
   if (!j.users || !j.users[0] || !j.users[0].email) throw new Error('로그인 정보를 확인하지 못했습니다. 다시 로그인해 주세요.');
-  var email = j.users[0].email.toLowerCase();
-  cache.put(key, email, 600);
-  return email;
+  var info = { email: j.users[0].email.toLowerCase(), uid: j.users[0].localId };
+  cache.put(key, JSON.stringify(info), 600);
+  return info;
 }
 
 function who_(email) {
@@ -170,13 +170,14 @@ function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
     var req = JSON.parse(e.postData.contents);
-    var email = verify_(req.token);
-    var u = who_(email);
+    var tk = verify_(req.token);
+    var u = who_(tk.email);
+    u.uid = tk.uid;
     var a = req.action, r;
     var writes = ['join','updateMe','upload','updateItem','uploadMs','removeMs','reviewMs','addSchedule','delSchedule','attend','addNotice','delNotice','pinNotice','addComment','delComment','judge','view'];
     if (writes.indexOf(a) >= 0) lock.waitLock(20000);
     switch (a) {
-      case 'me': r = { me: meInfo_(u) }; break;
+      case 'me': syncChat_(u); r = { me: meInfo_(u) }; break;
       case 'join': r = join_(u, req); break;
       case 'updateMe': r = updateMe_(u, req); break;
       case 'memberData': needMember_(u); r = memberData_(u); break;
@@ -310,6 +311,8 @@ function judge_(req) {
   var patch = { '상태': req.status, '처리일': today_() };
   if (req.role) patch['역할'] = req.role;
   update_('회원', m, patch);
+  if (req.status !== '승인') unsyncChat_(m);
+  else if (m['uid']) { try { rtdb_('put', '/members/' + m['uid'], { n: m['이름'], sc: m['소속'], admin: (req.role || m['역할']) === '운영진' }); } catch (e) {} }
   return adminData_();
 }
 
@@ -321,6 +324,7 @@ function syncMemberFolder() {
     var em = m['이메일'].toLowerCase(), has = viewers.indexOf(em) >= 0;
     if (m['상태'] === '승인' && !has) { try { folder.addViewer(em); } catch (e) {} }
     if (m['상태'] !== '승인' && has) { try { folder.removeViewer(em); } catch (e) {} }
+    if (m['상태'] !== '승인') unsyncChat_(m);
   });
 }
 
@@ -450,6 +454,31 @@ function delComment_(u, req) {
   if (!u.admin && c['작성자이메일'] !== u.email) throw new Error('내 댓글만 지울 수 있습니다.');
   deleteRow_('댓글', c);
   return {};
+}
+
+/* ───────────── 대화(파이어베이스 실시간 DB) 허용 명단 ───────────── */
+// 스크립트 속성: FIREBASE_DB_URL (예: https://jbpe-hub-default-rtdb.asia-southeast1.firebasedatabase.app)
+//                FIREBASE_DB_SECRET (파이어베이스 프로젝트 설정 → 서비스 계정 → 데이터베이스 비밀번호)
+function rtdb_(method, path, body) {
+  var url = P_('FIREBASE_DB_URL'), secret = P_('FIREBASE_DB_SECRET');
+  if (!url || !secret) return null;
+  var opt = { method: method, muteHttpExceptions: true, contentType: 'application/json' };
+  if (body !== undefined) opt.payload = JSON.stringify(body);
+  return UrlFetchApp.fetch(url.replace(/\/$/, '') + path + '.json?auth=' + encodeURIComponent(secret), opt);
+}
+function syncChat_(u) {
+  if (!u.uid || !u.row) return;
+  if (u.row['uid'] !== u.uid) { ensureHeaders_('회원'); update_('회원', u.row, { uid: u.uid }); }
+  var cache = CacheService.getScriptCache(), key = 'rt_' + u.uid + '_' + (u.member ? (u.admin ? 'a' : 'm') : 'x');
+  if (cache.get(key)) return;
+  try {
+    if (u.member) rtdb_('put', '/members/' + u.uid, { n: u.name, sc: u.school, admin: u.admin });
+    else rtdb_('delete', '/members/' + u.uid);
+    cache.put(key, '1', 21600);
+  } catch (e) {}
+}
+function unsyncChat_(m) {
+  if (m && m['uid']) { try { rtdb_('delete', '/members/' + m['uid']); } catch (e) {} }
 }
 
 /* ───────────── 사이트 자동 갱신 (GitHub) ───────────── */

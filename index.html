@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="config.js"></script>
@@ -235,6 +236,31 @@ footer .flogo{display:inline-block;vertical-align:middle;margin-right:6px;line-h
  .panel{padding:14px}
 }
 .form input[type=tel],.form input[type=date],.form input[type=time]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.chat{display:grid;grid-template-columns:260px 1fr;gap:14px;align-items:stretch}
+.chat-side{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;max-height:640px;overflow-y:auto}
+.chat-side h4{margin:14px 6px 6px;font-size:12.5px;color:var(--sub)}
+.chat-side .onn{color:var(--green)}
+.person{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;text-align:left;padding:8px;border-radius:10px;font-size:14px;color:var(--text)}
+.person:hover{background:#f4f6fa}.person.on{background:#e8eef7}
+.person .pn{flex:1;min-width:0}.person small{display:block;color:var(--sub);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person .cnt{font-size:11px;background:var(--orange);color:#fff;border-radius:999px;padding:0 6px}
+.dot{width:9px;height:9px;border-radius:50%;background:#c4cad4;flex:none}.dot.live{background:#22a35a;box-shadow:0 0 0 3px #d9f2e3}
+.ricon{width:26px;height:26px;border-radius:8px;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:900;flex:none}
+.side-empty{font-size:12.5px;color:var(--sub);margin:4px 8px}
+.chat-main{background:#fff;border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;min-height:520px;max-height:640px}
+.chat-head{padding:14px 18px;border-bottom:1px solid var(--line)}.chat-head small{display:block;color:var(--sub);font-size:12.5px}
+.chat-box{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px;background:#fafbfd}
+.chat-empty{color:var(--sub);text-align:center;margin:auto;font-size:14px}
+.msg{max-width:78%;align-self:flex-start}.msg.mine{align-self:flex-end;text-align:right}
+.mhead{font-size:12px;color:var(--sub);display:flex;gap:6px;align-items:center}.msg.mine .mhead{justify-content:flex-end}.mhead b{color:var(--text)}
+.mdel{border:0;background:none;color:var(--sub);font-size:11px;padding:0;text-decoration:underline}
+.bubble{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 12px;font-size:14.5px;white-space:pre-wrap;word-break:break-word;text-align:left;margin-top:2px}
+.msg.mine .bubble{background:var(--navy);border-color:var(--navy);color:#fff}
+.chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.chat-input textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:none;font-family:inherit;font-size:14px;min-height:44px;max-height:120px}
+.chat-note{font-size:11.5px;color:var(--sub);padding:0 14px 10px}
+nav a .cnt{font-size:11px;background:var(--orange);color:#fff;border-radius:999px;padding:0 6px;margin-left:5px}
+@media(max-width:760px){.chat{grid-template-columns:1fr}.chat-side{max-height:230px}.chat-main{min-height:460px}}
 </style>
 </head>
 <body>
@@ -278,7 +304,7 @@ let PUB = [];          // 공개 목록(손님용)
 let ME = null;         // 로그인한 사람 정보
 let MD = null;         // 회원 데이터(회원만)
 let AD = null;         // 운영진 데이터
-let view = "public", msub = "cal", calM = new Date();
+let view = "public", msub = (window.JBPE_DB_URL ? "chat" : "cal"), calM = new Date();
 let f = { q: "", g: [], a: [], ty: [], dl: [], sort: "new" };
 let bookSel = new Set(), bookTitle = "", bookMine = false;
 calM = new Date(calM.getFullYear(), calM.getMonth(), 1);
@@ -292,13 +318,13 @@ const isMember = () => !!(ME && ME.member);
 const isAdmin = () => !!(ME && ME.admin);
 
 /* ===== 파이어베이스 로그인 ===== */
-firebase.initializeApp(FIREBASE_CONFIG);
+firebase.initializeApp(Object.assign({}, FIREBASE_CONFIG, window.JBPE_DB_URL ? { databaseURL: window.JBPE_DB_URL } : {}));
 const AUTH = firebase.auth();
 async function login() {
   try { await AUTH.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
   catch (e) { if (e.code !== "auth/popup-closed-by-user") toast("로그인하지 못했어요: " + (e.message || e.code)); }
 }
-async function logout() { clearCache(); await AUTH.signOut(); ME = null; MD = null; AD = null; if (["mine", "admin"].includes(view)) go("public"); render(); }
+async function logout() { chatStop(); clearCache(); await AUTH.signOut(); ME = null; MD = null; AD = null; if (["mine", "admin"].includes(view)) go("public"); render(); }
 
 /* ===== 서버 호출 ===== */
 const apiReady = () => API_URL && !API_URL.startsWith("__");
@@ -330,7 +356,7 @@ function clearCache() { try { Object.keys(localStorage).filter(k => k.startsWith
 
 AUTH.onAuthStateChanged(async user => {
   authReady = true;
-  if (!user) { ME = null; MD = null; render(); return; }
+  if (!user) { chatStop(); ME = null; MD = null; render(); return; }
   const c = readCache(user.uid);
   if (c && c.ME) { ME = c.ME; MD = c.MD; render(); }   // 기억해 둔 화면을 먼저 보여 주고
   try {
@@ -341,6 +367,7 @@ AUTH.onAuthStateChanged(async user => {
     saveCache(user.uid);
   } catch (e) { if (!c) toast(e.message); }
   render();
+  if (isMember()) chatStart(); else chatStop();
   askPhone();
 });
 
@@ -421,8 +448,8 @@ function render() {
       + listView(allItems(), "자료실", "연구회 선생님들이 함께 만들고 나누는 수업 자료입니다. 자료마다 누구나 받을 수 있는지, 회원만 받을 수 있는지 표시되어 있어요.");
   }
   else if (view === "members") {
-    if (!isMember()) m.innerHTML = memberTabs() + `<div class="gate"><div class="gicon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b5651d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h2>회원만 볼 수 있어요</h2><p>자율연수 일정, 공지, 산출물 책자는 승인된 회원에게만 열립니다.<br>산출물 제출 의무 없이 가입할 수 있어요.</p>${ME ? "" : `<button class="btn primary" onclick="login()">구글 계정으로 로그인</button> `}<button class="btn" onclick="openJoin()">가입 신청</button></div>`;
-    else m.innerHTML = memberTabs() + (msub === "cal" ? calView() : msub === "notice" ? noticeView() : bookView());
+    if (!isMember()) m.innerHTML = memberTabs() + `<div class="gate"><div class="gicon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b5651d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h2>회원만 볼 수 있어요</h2><p>회원 대화방·쪽지, 자율연수 일정, 공지, 산출물 책자는 승인된 회원에게만 열립니다.<br>산출물 제출 의무 없이 가입할 수 있어요.</p>${ME ? "" : `<button class="btn primary" onclick="login()">구글 계정으로 로그인</button> `}<button class="btn" onclick="openJoin()">가입 신청</button></div>`;
+    else m.innerHTML = memberTabs() + (msub === "chat" ? chatView() : msub === "cal" ? calView() : msub === "notice" ? noticeView() : bookView());
   }
   else if (view === "mine") {
     if (!isMember()) { go("public"); return render(); }
@@ -435,6 +462,7 @@ function render() {
     if (!AD) loadAdmin().then(render).catch(e => toast(e.message));
   }
   labelTables();
+  chatBadge();
   const q = $("#q"); if (q) q.oninput = e => { f.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $("#q"); n.focus(); n.setSelectionRange(pos, pos); };
   const s = $("#sort"); if (s) s.onchange = e => { f.sort = e.target.value; render(); };
 }
@@ -617,8 +645,8 @@ async function hideItem(id) {
 
 /* ===== 회원 공간 탭 ===== */
 function memberTabs() {
-  const T = [["cal", "자율연수 일정"], ["notice", "공지"], ["book", "산출물 책자"]];
-  return `<div class="subtabs">${T.map(([k, n]) => `<button class="${msub === k ? "on" : ""}" onclick="msub='${k}';render()">${n}${k === "notice" && MD ? `<span class="cnt">${MD.notices.length}</span>` : ""}</button>`).join("")}</div>`;
+  const T = [["chat", "대화"], ["cal", "자율연수 일정"], ["notice", "공지"], ["book", "산출물 책자"]];
+  return `<div class="subtabs">${T.map(([k, n]) => `<button class="${msub === k ? "on" : ""}" onclick="msub='${k}';render()">${n}${k === "notice" && MD ? `<span class="cnt">${MD.notices.length}</span>` : ""}${k === "chat" && unreadN() ? `<span class="cnt">${unreadN()}</span>` : ""}</button>`).join("")}</div>`;
 }
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -800,6 +828,118 @@ async function buildPdf() {
     toast(`책자 PDF를 내려받았습니다 (${BOOK.pages.length}쪽)`);
   } catch (e) { console.error(e); toast("PDF를 만드는 중 문제가 생겼어요: " + (e.message || e)); }
   finally { btn.disabled = false; btn.textContent = "합친 PDF 받기"; }
+}
+
+/* ===== 대화: 접속자 · 1:1 쪽지 · 전체 대화방 (파이어베이스 실시간 DB) ===== */
+const CHAT = { on: false, db: null, uid: null, members: {}, status: {}, inbox: {}, room: [], dm: {}, active: "room", refs: [], dmRef: null, err: "" };
+const chatReady = () => !!(window.JBPE_DB_URL && firebase.database);
+const cidOf = other => [CHAT.uid, other].sort().join("_");
+const tFmt = t => { if (!t) return ""; const d = new Date(t), now = new Date(); const hm = `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`; return d.toDateString() === now.toDateString() ? hm : `${d.getMonth() + 1}.${d.getDate()} ${hm}`; };
+const unreadN = () => Object.values(CHAT.inbox).filter(v => v && v.unread).length;
+
+function chatStart() {
+  if (CHAT.on || !chatReady() || !isMember() || !AUTH.currentUser) return;
+  CHAT.on = true; CHAT.uid = AUTH.currentUser.uid; CHAT.db = firebase.database();
+  const db = CHAT.db, me = CHAT.uid;
+  const fail = e => { CHAT.err = "대화 기능에 연결하지 못했어요. 잠시 뒤 새로 고침해 주세요."; console.warn(e); if (msub === "chat") render(); };
+  // 접속 표시
+  const conn = db.ref(".info/connected"), stRef = db.ref("status/" + me);
+  conn.on("value", s => {
+    if (s.val() !== true) return;
+    stRef.onDisconnect().update({ state: "off", t: firebase.database.ServerValue.TIMESTAMP }).then(() =>
+      stRef.set({ state: "on", t: firebase.database.ServerValue.TIMESTAMP, n: ME.name || "", sc: ME.school || "" })).catch(fail);
+  });
+  CHAT.refs.push(conn);
+  const mRef = db.ref("members"); mRef.on("value", s => { CHAT.members = s.val() || {}; chatPaint(); }, fail); CHAT.refs.push(mRef);
+  const sRef = db.ref("status"); sRef.on("value", s => { CHAT.status = s.val() || {}; chatPaint(); }, fail); CHAT.refs.push(sRef);
+  const iRef = db.ref("inbox/" + me); iRef.on("value", s => { CHAT.inbox = s.val() || {}; chatBadge(); chatPaint(); }, fail); CHAT.refs.push(iRef);
+  const rRef = db.ref("room").orderByChild("t").limitToLast(150);
+  rRef.on("child_added", s => { CHAT.room.push({ id: s.key, ...s.val() }); if (CHAT.active === "room") chatAppend(); });
+  rRef.on("child_removed", s => { CHAT.room = CHAT.room.filter(m => m.id !== s.key); if (CHAT.active === "room") chatPaint(); });
+  CHAT.refs.push(rRef);
+}
+function chatStop() {
+  if (!CHAT.on) return;
+  try { CHAT.db.ref("status/" + CHAT.uid).update({ state: "off", t: firebase.database.ServerValue.TIMESTAMP }); } catch (e) {}
+  CHAT.refs.forEach(r => r.off()); if (CHAT.dmRef) CHAT.dmRef.off();
+  Object.assign(CHAT, { on: false, refs: [], dmRef: null, members: {}, status: {}, inbox: {}, room: [], dm: {}, active: "room", err: "" });
+  chatBadge();
+}
+function chatBadge() {
+  const n = unreadN(), a = document.querySelector('nav a[data-v="members"]');
+  if (!a) return;
+  let b = a.querySelector(".cnt"); if (!n) { if (b) b.remove(); return; }
+  if (!b) { b = document.createElement("span"); b.className = "cnt"; a.appendChild(b); }
+  b.textContent = n;
+}
+function openDm(uid) {
+  CHAT.active = uid;
+  if (CHAT.dmRef) CHAT.dmRef.off();
+  const cid = cidOf(uid); CHAT.dm[cid] = [];
+  CHAT.dmRef = CHAT.db.ref("dm/" + cid).orderByChild("t").limitToLast(200);
+  CHAT.dmRef.on("child_added", s => { (CHAT.dm[cid] = CHAT.dm[cid] || []).push({ id: s.key, ...s.val() }); if (CHAT.active === uid) chatAppend(); });
+  if (CHAT.inbox[uid] && CHAT.inbox[uid].unread) CHAT.db.ref(`inbox/${CHAT.uid}/${uid}/unread`).set(false);
+  msub = "chat"; go("members"); render();
+}
+function openRoom() { CHAT.active = "room"; if (CHAT.dmRef) { CHAT.dmRef.off(); CHAT.dmRef = null; } render(); }
+
+async function chatSend() {
+  const inp = $("#chatIn"); if (!inp) return;
+  const x = inp.value.trim(); if (!x) return;
+  if (x.length > 1000) return toast("1000자까지 보낼 수 있어요");
+  const T = firebase.database.ServerValue.TIMESTAMP, msg = { uid: CHAT.uid, n: ME.name || ME.email, x, t: T };
+  inp.value = ""; inp.focus();
+  try {
+    if (CHAT.active === "room") await CHAT.db.ref("room").push(msg);
+    else {
+      const other = CHAT.active, cid = cidOf(other), on = CHAT.members[other] || {};
+      await CHAT.db.ref("dm/" + cid).push(msg);
+      const last = x.slice(0, 60);
+      await CHAT.db.ref(`inbox/${other}/${CHAT.uid}`).set({ n: ME.name || ME.email, last, t: T, unread: true });
+      await CHAT.db.ref(`inbox/${CHAT.uid}/${other}`).set({ n: on.n || "", last, t: T, unread: false });
+    }
+  } catch (e) { inp.value = x; toast("보내지 못했어요: " + (e.message || e.code)); }
+}
+async function delRoomMsg(id) { try { await CHAT.db.ref("room/" + id).remove(); } catch (e) { toast("지우지 못했어요"); } }
+
+function msgHTML(m) {
+  const mine = m.uid === CHAT.uid, adminDel = CHAT.active === "room" && (mine || isAdmin());
+  return `<div class="msg ${mine ? "mine" : ""}"><div class="mhead">${mine ? "" : `<b>${esc(m.n)}</b>`}<span>${tFmt(m.t)}</span>${adminDel ? `<button class="mdel" onclick='delRoomMsg(${JSON.stringify(m.id)})' aria-label="메시지 지우기">지우기</button>` : ""}</div><div class="bubble">${esc(m.x)}</div></div>`;
+}
+function curMsgs() { return CHAT.active === "room" ? CHAT.room : (CHAT.dm[cidOf(CHAT.active)] || []); }
+function chatAppend() {
+  const box = $("#chatBox"); if (!box) return;
+  const near = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
+  box.innerHTML = curMsgs().map(msgHTML).join("") || `<div class="chat-empty">${CHAT.active === "room" ? "아직 대화가 없어요. 첫 인사를 남겨 보세요." : "아직 주고받은 쪽지가 없어요."}</div>`;
+  if (near) box.scrollTop = box.scrollHeight;
+  if (CHAT.active !== "room" && CHAT.inbox[CHAT.active] && CHAT.inbox[CHAT.active].unread) CHAT.db.ref(`inbox/${CHAT.uid}/${CHAT.active}/unread`).set(false);
+}
+let paintTimer = null;
+function chatPaint() { if (view !== "members" || msub !== "chat") return; clearTimeout(paintTimer); paintTimer = setTimeout(() => { const side = $("#chatSide"); if (side) side.innerHTML = chatSideHTML(); else render(); }, 60); }
+
+function chatSideHTML() {
+  const ids = Object.keys(CHAT.members).filter(u => u !== CHAT.uid);
+  const online = ids.filter(u => CHAT.status[u] && CHAT.status[u].state === "on");
+  const convs = Object.entries(CHAT.inbox).sort((a, b) => (b[1].t || 0) - (a[1].t || 0));
+  const person = u => { const m = CHAT.members[u] || {}, on = online.includes(u), ib = CHAT.inbox[u];
+    return `<button class="person ${CHAT.active === u ? "on" : ""}" onclick='openDm(${JSON.stringify(u)})'><span class="dot ${on ? "live" : ""}" aria-label="${on ? "접속 중" : "접속 안 함"}"></span><span class="pn">${esc(m.n || "회원")}<small>${esc(m.sc || "")}</small></span>${ib && ib.unread ? '<span class="cnt">N</span>' : ""}</button>`; };
+  return `<button class="person room ${CHAT.active === "room" ? "on" : ""}" onclick="openRoom()"><span class="ricon" aria-hidden="true">#</span><span class="pn">전체 대화방<small>회원 모두가 함께</small></span></button>
+   ${convs.length ? `<h4>쪽지</h4>${convs.map(([u, c]) => `<button class="person ${CHAT.active === u ? "on" : ""}" onclick='openDm(${JSON.stringify(u)})'><span class="dot ${online.includes(u) ? "live" : ""}"></span><span class="pn">${esc((CHAT.members[u] || {}).n || c.n || "회원")}<small>${esc(c.last || "")}</small></span>${c.unread ? '<span class="cnt">N</span>' : ""}</button>`).join("")}` : ""}
+   <h4>지금 접속 중 <span class="onn">${online.length}명</span></h4>${online.length ? online.map(person).join("") : '<p class="side-empty">지금 접속한 다른 회원이 없어요</p>'}
+   <h4>모든 회원</h4>${ids.filter(u => !online.includes(u)).sort((a, b) => String((CHAT.members[a] || {}).n).localeCompare(String((CHAT.members[b] || {}).n), "ko")).map(person).join("") || '<p class="side-empty">아직 다른 회원이 없어요</p>'}`;
+}
+function chatView() {
+  if (!chatReady()) return `<div class="empty">대화 기능은 운영진이 실시간 데이터베이스를 연결하면 열립니다.</div>`;
+  chatStart();
+  if (CHAT.err) return `<div class="empty">${esc(CHAT.err)}</div>`;
+  const title = CHAT.active === "room" ? "전체 대화방" : `${esc((CHAT.members[CHAT.active] || {}).n || "회원")} 선생님과 쪽지`;
+  const sub = CHAT.active === "room" ? "회원 모두가 보는 대화방이에요. 서로 존중하는 말로 이야기해 주세요." : ((CHAT.status[CHAT.active] || {}).state === "on" ? "지금 접속 중이에요. 바로 주고받을 수 있어요." : "지금은 접속해 있지 않아요. 남긴 쪽지는 다음에 접속하면 볼 수 있어요.");
+  setTimeout(chatAppend, 0);
+  return `<div class="chat"><aside class="chat-side" id="chatSide">${chatSideHTML()}</aside>
+   <section class="chat-main"><div class="chat-head"><b>${title}</b><small>${sub}</small></div>
+   <div class="chat-box" id="chatBox" aria-live="polite"></div>
+   <div class="chat-input"><textarea id="chatIn" rows="1" placeholder="메시지를 입력하세요 (Enter 보내기, Shift+Enter 줄바꿈)" aria-label="메시지" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();chatSend()}"></textarea><button class="btn primary" onclick="chatSend()">보내기</button></div>
+   <div class="chat-note">대화 내용은 연구회 공용 계정의 파이어베이스에 저장되며, 운영진이 관리를 위해 볼 수 있습니다.</div></section></div>`;
 }
 
 /* ===== 운영진 관리 ===== */
