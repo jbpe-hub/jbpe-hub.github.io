@@ -223,6 +223,8 @@ footer .flogo{display:inline-block;vertical-align:middle;margin-right:6px;line-h
 .busy{position:fixed;inset:0;background:rgba(255,255,255,.6);display:none;align-items:center;justify-content:center;z-index:50;font-weight:700;color:var(--navy)}
 .busy.show{display:flex}
 .status-pill{font-size:12px;border-radius:999px;padding:2px 10px;background:#fdf1e3;color:#b5651d;margin-left:6px}
+.chip.main{--c:#17325c;color:var(--c);border-color:color-mix(in srgb,var(--c) 35%,white);background:color-mix(in srgb,var(--c) 9%,white)}
+.chip.main.on{background:var(--c);border-color:var(--c);color:#fff}
 </style>
 </head>
 <body>
@@ -323,6 +325,8 @@ AUTH.onAuthStateChanged(async user => {
 const allItems = () => (MD ? MD.items : PUB);
 const AREA_MAIN = () => CFG.areas.map(A => A.n);
 const isAiTag = a => { const ai = CFG.areas.find(A => A.n.startsWith("AI")); return a.startsWith("AI") || (ai && ai.s.includes(a)); };
+const AREA_COLORS = ["#2F8A57", "#2B5797", "#C25E12", "#7A4FB5", "#0F7C86", "#9A3D5C"];
+const areaStyle = n => { const i = AREA_MAIN().indexOf(n); return i < 0 ? "" : `style="--c:${AREA_COLORS[i % AREA_COLORS.length]}"`; };
 const mainArea = it => AREA_MAIN().find(n => it.a.includes(n)) || "기타";
 
 /* ===== 머리 · 메뉴 ===== */
@@ -354,7 +358,7 @@ function filters() {
   return `<aside>
    <h4>학년</h4><div class="chips">${chipRow(CFG.grades, "g")}</div>
    <h4>영역</h4>
-   ${CFG.areas.map(A => `<div class="area-group"><button class="chip main ${f.a.includes(A.n) ? "on" : ""}" onclick='tog("a",${JSON.stringify(A.n)})'>${esc(A.n)}</button>${A.s.length ? `<div class="subs">${chipRow(A.s, "a")}</div>` : ""}</div>`).join("")}
+   ${CFG.areas.map(A => `<div class="area-group"><button class="chip main ${f.a.includes(A.n) ? "on" : ""}" ${areaStyle(A.n)} onclick='tog("a",${JSON.stringify(A.n)})'>${esc(A.n)}</button>${A.s.length ? `<div class="subs">${chipRow(A.s, "a")}</div>` : ""}</div>`).join("")}
    <h4>자료 종류</h4><div class="chips">${chipRow(CFG.types, "ty")}</div>
    <button class="btn reset" onclick="f={q:'',g:[],a:[],ty:[],sort:f.sort};render()">필터 모두 지우기</button>
   </aside>`;
@@ -512,7 +516,7 @@ function openUpload() {
     <label for="ut">자료 이름</label><input type="text" id="ut" placeholder="예: 5학년 전략형 게임 수업 지도안">
     <label for="ud">설명</label><textarea id="ud" placeholder="어떤 수업에서 어떻게 쓰는 자료인지 짧게 적어 주세요. 회원 전용 자료도 제목과 설명은 누구나 볼 수 있으니 내부 사정은 적지 말아 주세요."></textarea>
     <label>대상 학년 (여러 개 선택)</label><div class="pick" id="ug">${pick(CFG.grades, "g")}</div>
-    <label>영역 (여러 개 선택)</label><div class="pick" id="ua">${CFG.areas.map(A => pick([A.n, ...A.s], "a")).join("")}</div>
+    <label>영역 (여러 개 선택)</label><div class="pick" id="ua">${CFG.areas.map(A => `<button type="button" class="chip main" ${areaStyle(A.n)} data-a="${esc(A.n)}" onclick="this.classList.toggle('on')">${esc(A.n)}</button>` + pick(A.s, "a")).join("")}</div>
     <label for="usrc">참고한 자료 (있으면)</label><input type="text" id="usrc" placeholder="예: OO 출판사 체육 지도서, 유튜브 'OO 채널' 영상">
     <label for="uty">자료 종류</label><select id="uty">${CFG.types.map(t => `<option>${esc(t)}</option>`).join("")}</select>
     <label>파일 또는 링크</label><div class="drop"><input type="file" id="uf"><div style="margin-top:6px">또는 유튜브·웹 프로그램 주소 (영상은 유튜브 일부 공개 링크로)</div><input type="text" id="ul" placeholder="https://" style="margin-top:6px"></div>
