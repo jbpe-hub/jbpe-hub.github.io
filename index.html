@@ -131,6 +131,10 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
 .cfoot span:last-child{white-space:nowrap}
 .subtabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .subtabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 16px;font-size:14px;font-weight:500;color:var(--sub)}
+.subtabs .tabedit{margin-left:auto;border:1px dashed var(--line);background:transparent;border-radius:999px;padding:7px 12px;font-size:13px;color:var(--sub)}
+.tord .trow{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:#fff}
+.tord .tn{width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;display:grid;place-items:center}
+.tord .sp{flex:1}
 .subtabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .subtabs .cnt{font-size:11px;background:var(--orange);color:#fff;border-radius:999px;padding:0 6px;margin-left:5px}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
@@ -655,9 +659,27 @@ async function hideItem(id) {
 }
 
 /* ===== 회원 공간 탭 ===== */
+const MTABS = { chat: "대화", meet: "화상 회의", cal: "자율연수 일정", notice: "공지", book: "산출물 책자" };
+let msubPicked = false;
+function tabOrder() {
+  const saved = (MEET.cfg && Array.isArray(MEET.cfg.tabs)) ? MEET.cfg.tabs.filter(k => MTABS[k]) : [];
+  return [...new Set([...saved, ...Object.keys(MTABS)])];
+}
+function pickTab(k) { msub = k; msubPicked = true; render(); }
 function memberTabs() {
-  const T = [["chat", "대화"], ["meet", "화상 회의"], ["cal", "자율연수 일정"], ["notice", "공지"], ["book", "산출물 책자"]];
-  return `<div class="subtabs">${T.map(([k, n]) => `<button class="${msub === k ? "on" : ""}" onclick="msub='${k}';render()">${n}${k === "notice" && MD && MD.notices.length ? `<span class="cnt">${MD.notices.length}</span>` : ""}${k === "chat" && unreadN() ? `<span class="cnt">${unreadN()}</span>` : ""}${k === "meet" && inRoomList().length ? `<span class="cnt live">${inRoomList().length}</span>` : ""}</button>`).join("")}</div>`;
+  return `<div class="subtabs">${tabOrder().map(k => `<button class="${msub === k ? "on" : ""}" onclick="pickTab('${k}')">${MTABS[k]}${k === "notice" && MD && MD.notices.length ? `<span class="cnt">${MD.notices.length}</span>` : ""}${k === "chat" && unreadN() ? `<span class="cnt">${unreadN()}</span>` : ""}${k === "meet" && inRoomList().length ? `<span class="cnt live">${inRoomList().length}</span>` : ""}</button>`).join("")}${isAdmin() && isMember() && chatReady() ? `<button class="tabedit" onclick="openTabOrder()" title="탭 순서 바꾸기">⇅ 순서</button>` : ""}</div>`;
+}
+let TORD = [];
+function openTabOrder() { TORD = tabOrder(); paintTabOrder(); }
+function paintTabOrder() {
+  openM(`<h2>회원 공간 탭 순서</h2><p class="hint" style="margin:0 0 12px;color:var(--sub);font-size:14px">화살표로 순서를 바꾸고 저장하면 모든 회원에게 같은 순서로 보여요. 맨 위 탭이 처음 열리는 탭이에요.</p>
+  <div class="tord">${TORD.map((k, i) => `<div class="trow"><span class="tn">${i + 1}</span><b>${MTABS[k]}</b><span class="sp"></span><button class="btn mini" ${i ? "" : "disabled"} onclick="moveTab(${i},-1)" aria-label="위로">▲</button><button class="btn mini" ${i < TORD.length - 1 ? "" : "disabled"} onclick="moveTab(${i},1)" aria-label="아래로">▼</button></div>`).join("")}</div>
+  <div class="mfoot" style="margin-top:14px"><button class="btn" onclick="TORD=Object.keys(MTABS);paintTabOrder()">처음 순서로</button><button class="btn primary" onclick="saveTabOrder()">저장</button></div>`);
+}
+function moveTab(i, d) { const j = i + d; [TORD[i], TORD[j]] = [TORD[j], TORD[i]]; paintTabOrder(); }
+async function saveTabOrder() {
+  try { await CHAT.db.ref("meet/tabs").set(TORD); closeM(); toast("탭 순서를 저장했어요"); }
+  catch (e) { toast("저장하지 못했어요. 잠시 뒤 다시 해 주세요"); }
 }
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -893,7 +915,7 @@ function openDm(uid) {
   CHAT.dmRef = CHAT.db.ref("dm/" + cid).orderByChild("t").limitToLast(200);
   CHAT.dmRef.on("child_added", s => { (CHAT.dm[cid] = CHAT.dm[cid] || []).push({ id: s.key, ...s.val() }); if (CHAT.active === uid) chatAppend(); });
   if (CHAT.inbox[uid] && CHAT.inbox[uid].unread) CHAT.db.ref(`inbox/${CHAT.uid}/${uid}/unread`).set(false);
-  msub = "chat"; go("members"); render();
+  msub = "chat"; msubPicked = true; go("members"); render();
 }
 function openRoom() { CHAT.active = "room"; if (CHAT.dmRef) { CHAT.dmRef.off(); CHAT.dmRef = null; } render(); }
 
@@ -947,7 +969,7 @@ function chatSideHTML() {
   const convs = Object.entries(CHAT.inbox).sort((a, b) => (b[1].t || 0) - (a[1].t || 0));
   const person = u => { const m = CHAT.members[u] || {}, on = online.includes(u), ib = CHAT.inbox[u];
     return `<button class="person ${CHAT.active === u ? "on" : ""}" onclick='openDm(${JSON.stringify(u)})'><span class="dot ${on ? "live" : ""}" aria-label="${on ? "접속 중" : "접속 안 함"}"></span><span class="pn">${esc(m.n || "회원")}<small>${esc(m.sc || "")}</small></span>${ib && ib.unread ? '<span class="cnt">N</span>' : ""}</button>`; };
-  const mtn = inRoomList().length, meetBanner = (MEET.cfg && MEET.cfg.url) ? `<button class="person meetb" onclick="msub='meet';render()"><span class="ricon" style="background:var(--green)" aria-hidden="true">▶</span><span class="pn">화상 회의실<small>${mtn ? `지금 ${mtn}명 회의 중` : "비어 있어요"}</small></span></button>` : "";
+  const mtn = inRoomList().length, meetBanner = (MEET.cfg && MEET.cfg.url) ? `<button class="person meetb" onclick="pickTab('meet')"><span class="ricon" style="background:var(--green)" aria-hidden="true">▶</span><span class="pn">화상 회의실<small>${mtn ? `지금 ${mtn}명 회의 중` : "비어 있어요"}</small></span></button>` : "";
   return meetBanner + `<button class="person room ${CHAT.active === "room" ? "on" : ""}" onclick="openRoom()"><span class="ricon" aria-hidden="true">#</span><span class="pn">전체 대화방<small>회원 모두가 함께</small></span></button>
    ${convs.length ? `<h4>쪽지</h4>${convs.map(([u, c]) => `<button class="person ${CHAT.active === u ? "on" : ""}" onclick='openDm(${JSON.stringify(u)})'><span class="dot ${online.includes(u) ? "live" : ""}"></span><span class="pn">${esc((CHAT.members[u] || {}).n || c.n || "회원")}<small>${esc(c.last || "")}</small></span>${c.unread ? '<span class="cnt">N</span>' : ""}</button>`).join("")}` : ""}
    <h4>지금 접속 중 <span class="onn">${online.length}명</span></h4>${online.length ? online.map(person).join("") : '<p class="side-empty">지금 접속한 다른 회원이 없어요</p>'}
@@ -973,7 +995,7 @@ const MEET_RE = /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}(\?.*)?
 function meetStart() {
   if (!CHAT.db || MEET.started) return; MEET.started = true;
   const db = CHAT.db;
-  const r1 = db.ref("meet"); r1.on("value", s => { MEET.cfg = s.val(); meetPaint(); }); CHAT.refs.push(r1);
+  const r1 = db.ref("meet"); r1.on("value", s => { const before = tabOrder().join(); MEET.cfg = s.val(); const changed = tabOrder().join() !== before; if (!msubPicked) msub = tabOrder()[0]; if (changed && view === "members") render(); else meetPaint(); }); CHAT.refs.push(r1);
   const r2 = db.ref("meetIn"); r2.on("value", s => { MEET.inRoom = s.val() || {}; meetPaint(); }); CHAT.refs.push(r2);
   const r3 = db.ref("eventMeet"); r3.on("value", s => { MEET.ev = s.val() || {}; if (view === "members" && msub === "cal") render(); }); CHAT.refs.push(r3);
 }
@@ -1009,10 +1031,10 @@ function meetView() {
 }
 async function saveMeet(clear) {
   try {
-    if (clear) { await CHAT.db.ref("meet").remove(); toast("회의실 링크를 지웠어요"); return; }
+    if (clear) { await CHAT.db.ref("meet").update({ url: null, title: null, by: null, t: null }); toast("회의실 링크를 지웠어요"); return; }
     const url = $("#mtu").value.trim(), title = $("#mtt").value.trim() || "연구회 화상 회의실";
     if (!MEET_RE.test(url)) return $("#mterr").textContent = "구글 미트 링크를 확인해 주세요. (예: https://meet.google.com/abc-defg-hij)";
-    await CHAT.db.ref("meet").set({ url, title, by: ME.name || "", t: firebase.database.ServerValue.TIMESTAMP });
+    await CHAT.db.ref("meet").update({ url, title, by: ME.name || "", t: firebase.database.ServerValue.TIMESTAMP });
     toast("회의실 링크를 저장했어요");
   } catch (e) { toast("저장하지 못했어요. 보안 규칙을 새로 붙여 넣었는지 확인해 주세요"); }
 }
