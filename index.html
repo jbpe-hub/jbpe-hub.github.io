@@ -261,6 +261,13 @@ footer .flogo{display:inline-block;vertical-align:middle;margin-right:6px;line-h
 .chat-note{font-size:11.5px;color:var(--sub);padding:0 14px 10px}
 nav a .cnt{font-size:11px;background:var(--orange);color:#fff;border-radius:999px;padding:0 6px;margin-left:5px}
 @media(max-width:760px){.chat{grid-template-columns:1fr}.chat-side{max-height:230px}.chat-main{min-height:460px}}
+.meetcard .meet-top{display:flex;gap:14px;align-items:center}
+.meet-ico{width:52px;height:52px;border-radius:14px;background:var(--green);display:grid;place-items:center;flex:none}
+.meet-people{display:flex;flex-wrap:wrap;gap:8px}
+.mp{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:14px;background:#fff}
+.mp small{color:var(--sub);font-size:12px}
+.subtabs .cnt.live{background:var(--green)}
+.person.meetb{background:#eaf6ef;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -449,7 +456,7 @@ function render() {
   }
   else if (view === "members") {
     if (!isMember()) m.innerHTML = memberTabs() + `<div class="gate"><div class="gicon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b5651d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h2>회원만 볼 수 있어요</h2><p>회원 대화방·쪽지, 자율연수 일정, 공지, 산출물 책자는 승인된 회원에게만 열립니다.<br>산출물 제출 의무 없이 가입할 수 있어요.</p>${ME ? "" : `<button class="btn primary" onclick="login()">구글 계정으로 로그인</button> `}<button class="btn" onclick="openJoin()">가입 신청</button></div>`;
-    else m.innerHTML = memberTabs() + (msub === "chat" ? chatView() : msub === "cal" ? calView() : msub === "notice" ? noticeView() : bookView());
+    else m.innerHTML = memberTabs() + (msub === "chat" ? chatView() : msub === "meet" ? meetView() : msub === "cal" ? calView() : msub === "notice" ? noticeView() : bookView());
   }
   else if (view === "mine") {
     if (!isMember()) { go("public"); return render(); }
@@ -645,8 +652,8 @@ async function hideItem(id) {
 
 /* ===== 회원 공간 탭 ===== */
 function memberTabs() {
-  const T = [["chat", "대화"], ["cal", "자율연수 일정"], ["notice", "공지"], ["book", "산출물 책자"]];
-  return `<div class="subtabs">${T.map(([k, n]) => `<button class="${msub === k ? "on" : ""}" onclick="msub='${k}';render()">${n}${k === "notice" && MD && MD.notices.length ? `<span class="cnt">${MD.notices.length}</span>` : ""}${k === "chat" && unreadN() ? `<span class="cnt">${unreadN()}</span>` : ""}</button>`).join("")}</div>`;
+  const T = [["chat", "대화"], ["meet", "화상 회의"], ["cal", "자율연수 일정"], ["notice", "공지"], ["book", "산출물 책자"]];
+  return `<div class="subtabs">${T.map(([k, n]) => `<button class="${msub === k ? "on" : ""}" onclick="msub='${k}';render()">${n}${k === "notice" && MD && MD.notices.length ? `<span class="cnt">${MD.notices.length}</span>` : ""}${k === "chat" && unreadN() ? `<span class="cnt">${unreadN()}</span>` : ""}${k === "meet" && inRoomList().length ? `<span class="cnt live">${inRoomList().length}</span>` : ""}</button>`).join("")}</div>`;
 }
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -663,13 +670,14 @@ function calView() {
    <span class="sp"></span>${isAdmin() ? `<button class="btn primary mini" onclick="openEvForm()">일정 추가</button>` : ""}</div><div class="cal">${cells}</div></div>
    <div class="panel"><h3>다가오는 일정</h3><div class="evlist">${up.map(e => { const d = new Date(e.d); return `<div class="evrow"><div class="evdate"><b>${d.getMonth() + 1}.${d.getDate()}</b><span>${WD[d.getDay()]}요일</span></div>
      <div class="info"><b>${esc(e.t)}</b>${e.big ? ' <span class="pin">세미나</span>' : ""}<small>${esc(e.tm)} · ${esc(e.p)}</small></div>
-     <span class="att">참석 ${e.att.length}명</span><button class="btn mini ${e.me ? "on-att" : ""}" onclick='toggleAtt(${JSON.stringify(e.id)})'>${e.me ? "참석 예정" : "참석하기"}</button></div>`; }).join("") || '<p style="color:var(--sub)">예정된 일정이 없습니다.</p>'}</div></div>`;
+     ${evMeetUrl(e.id) ? `<button class="btn mini ok" onclick='joinMeet(${JSON.stringify(evMeetUrl(e.id))},${JSON.stringify(e.t)})'>화상 입장</button>` : ""}<span class="att">참석 ${e.att.length}명</span><button class="btn mini ${e.me ? "on-att" : ""}" onclick='toggleAtt(${JSON.stringify(e.id)})'>${e.me ? "참석 예정" : "참석하기"}</button></div>`; }).join("") || '<p style="color:var(--sub)">예정된 일정이 없습니다.</p>'}</div></div>`;
 }
 async function toggleAtt(id) { try { await api("attend", { id }); await loadMember(); render(); } catch (e) { toast(e.message); } }
 function openEv(id) {
   const e = MD.schedules.find(s => s.id === id), d = new Date(e.d);
-  openM(`<h2>${esc(e.t)}</h2><dl class="meta"><dt>날짜</dt><dd>${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일 ${esc(e.tm)}</dd><dt>장소</dt><dd>${esc(e.p)}</dd><dt>참석 예정</dt><dd>${e.att.length ? e.att.map(esc).join(", ") : "아직 없음"}</dd></dl>
-  <div class="mfoot">${isAdmin() ? `<button class="btn" onclick='delEv(${JSON.stringify(id)})'>일정 삭제</button>` : ""}<button class="btn primary" onclick='closeM();toggleAtt(${JSON.stringify(id)})'>${e.me ? "참석 취소" : "참석하기"}</button></div>`);
+  openM(`<h2>${esc(e.t)}</h2><dl class="meta"><dt>날짜</dt><dd>${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일 ${esc(e.tm)}</dd><dt>장소</dt><dd>${esc(e.p)}</dd><dt>참석 예정</dt><dd>${e.att.length ? e.att.map(esc).join(", ") : "아직 없음"}</dd>${evMeetUrl(id) ? `<dt>화상 회의</dt><dd><button class="btn mini ok" onclick='joinMeet(${JSON.stringify(evMeetUrl(id))},${JSON.stringify(e.t)})'>구글 미트 입장</button></dd>` : ""}</dl>
+  ${isAdmin() && chatReady() ? `<div class="form" style="margin:0"><label for="evmu">화상 회의 연결 (운영진)</label><input type="text" id="evmu" value="${esc(MEET.ev[id] || "")}" placeholder="구글 미트 링크, 또는 room (연구회 회의실 사용), 비우면 연결 안 함"></div><div class="err" id="evmerr"></div>` : ""}
+  <div class="mfoot">${isAdmin() ? `<button class="btn" onclick='delEv(${JSON.stringify(id)})'>일정 삭제</button>${chatReady() ? `<button class="btn" onclick='saveEvMeet(${JSON.stringify(id)})'>화상 회의 저장</button>` : ""}` : ""}<button class="btn primary" onclick='closeM();toggleAtt(${JSON.stringify(id)})'>${e.me ? "참석 취소" : "참석하기"}</button></div>`);
 }
 async function delEv(id) { try { busy(true); await api("delSchedule", { id }); closeM(); await loadMember(); render(); } catch (e) { toast(e.message); } finally { busy(false); } }
 function openEvForm() {
@@ -857,11 +865,13 @@ function chatStart() {
   rRef.on("child_added", s => { CHAT.room.push({ id: s.key, ...s.val() }); if (CHAT.active === "room") chatAppend(); });
   rRef.on("child_removed", s => { CHAT.room = CHAT.room.filter(m => m.id !== s.key); if (CHAT.active === "room") chatPaint(); });
   CHAT.refs.push(rRef);
+  meetStart();
 }
 function chatStop() {
   if (!CHAT.on) return;
   try { CHAT.db.ref("status/" + CHAT.uid).update({ state: "off", t: firebase.database.ServerValue.TIMESTAMP }); } catch (e) {}
   CHAT.refs.forEach(r => r.off()); if (CHAT.dmRef) CHAT.dmRef.off();
+  MEET.started = false; MEET.cfg = null; MEET.inRoom = {}; MEET.ev = {};
   Object.assign(CHAT, { on: false, refs: [], dmRef: null, members: {}, status: {}, inbox: {}, room: [], dm: {}, active: "room", err: "" });
   chatBadge();
 }
@@ -923,7 +933,8 @@ function chatSideHTML() {
   const convs = Object.entries(CHAT.inbox).sort((a, b) => (b[1].t || 0) - (a[1].t || 0));
   const person = u => { const m = CHAT.members[u] || {}, on = online.includes(u), ib = CHAT.inbox[u];
     return `<button class="person ${CHAT.active === u ? "on" : ""}" onclick='openDm(${JSON.stringify(u)})'><span class="dot ${on ? "live" : ""}" aria-label="${on ? "접속 중" : "접속 안 함"}"></span><span class="pn">${esc(m.n || "회원")}<small>${esc(m.sc || "")}</small></span>${ib && ib.unread ? '<span class="cnt">N</span>' : ""}</button>`; };
-  return `<button class="person room ${CHAT.active === "room" ? "on" : ""}" onclick="openRoom()"><span class="ricon" aria-hidden="true">#</span><span class="pn">전체 대화방<small>회원 모두가 함께</small></span></button>
+  const mtn = inRoomList().length, meetBanner = (MEET.cfg && MEET.cfg.url) ? `<button class="person meetb" onclick="msub='meet';render()"><span class="ricon" style="background:var(--green)" aria-hidden="true">▶</span><span class="pn">화상 회의실<small>${mtn ? `지금 ${mtn}명 회의 중` : "비어 있어요"}</small></span></button>` : "";
+  return meetBanner + `<button class="person room ${CHAT.active === "room" ? "on" : ""}" onclick="openRoom()"><span class="ricon" aria-hidden="true">#</span><span class="pn">전체 대화방<small>회원 모두가 함께</small></span></button>
    ${convs.length ? `<h4>쪽지</h4>${convs.map(([u, c]) => `<button class="person ${CHAT.active === u ? "on" : ""}" onclick='openDm(${JSON.stringify(u)})'><span class="dot ${online.includes(u) ? "live" : ""}"></span><span class="pn">${esc((CHAT.members[u] || {}).n || c.n || "회원")}<small>${esc(c.last || "")}</small></span>${c.unread ? '<span class="cnt">N</span>' : ""}</button>`).join("")}` : ""}
    <h4>지금 접속 중 <span class="onn">${online.length}명</span></h4>${online.length ? online.map(person).join("") : '<p class="side-empty">지금 접속한 다른 회원이 없어요</p>'}
    <h4>접속 안 한 회원</h4>${ids.filter(u => !online.includes(u)).sort((a, b) => String((CHAT.members[a] || {}).n).localeCompare(String((CHAT.members[b] || {}).n), "ko")).map(person).join("") || '<p class="side-empty">모두 접속 중이에요</p>'}`;
@@ -941,6 +952,65 @@ function chatView() {
    <div class="chat-input"><textarea id="chatIn" rows="1" placeholder="메시지를 입력하세요 (Enter 보내기, Shift+Enter 줄바꿈)" aria-label="메시지" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();chatSend()}"></textarea><button class="btn primary" onclick="chatSend()">보내기</button></div>
    <div class="chat-note">대화 내용은 연구회 공용 계정의 파이어베이스에 저장되며, 운영진이 관리를 위해 볼 수 있습니다.</div></section></div>`;
 }
+
+/* ===== 화상 회의 (구글 미트 연결) ===== */
+const MEET = { cfg: null, inRoom: {}, ev: {} };
+const MEET_RE = /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}(\?.*)?$/i;
+function meetStart() {
+  if (!CHAT.db || MEET.started) return; MEET.started = true;
+  const db = CHAT.db;
+  const r1 = db.ref("meet"); r1.on("value", s => { MEET.cfg = s.val(); meetPaint(); }); CHAT.refs.push(r1);
+  const r2 = db.ref("meetIn"); r2.on("value", s => { MEET.inRoom = s.val() || {}; meetPaint(); }); CHAT.refs.push(r2);
+  const r3 = db.ref("eventMeet"); r3.on("value", s => { MEET.ev = s.val() || {}; if (view === "members" && msub === "cal") render(); }); CHAT.refs.push(r3);
+}
+function meetPaint() { if (view === "members" && (msub === "meet" || msub === "chat")) { if (msub === "meet") render(); else chatPaint(); } }
+const inRoomList = () => Object.entries(MEET.inRoom).filter(([u, v]) => v && Date.now() - (v.t || 0) < 3 * 3600e3);
+function joinMeet(url, label) {
+  if (!url) return toast("회의 링크가 아직 없어요");
+  window.open(url, "_blank", "noopener");
+  try {
+    const ref = CHAT.db.ref("meetIn/" + CHAT.uid);
+    ref.onDisconnect().remove();
+    ref.set({ n: ME.name || ME.email, t: firebase.database.ServerValue.TIMESTAMP, room: label || "연구회 회의실" });
+  } catch (e) {}
+}
+function leaveMeet() { try { CHAT.db.ref("meetIn/" + CHAT.uid).remove(); } catch (e) {} }
+function meetView() {
+  if (!chatReady()) return `<div class="empty">화상 회의 연결은 실시간 데이터베이스가 연결되면 열립니다.</div>`;
+  chatStart(); meetStart();
+  const c = MEET.cfg || {}, people = inRoomList(), meIn = !!MEET.inRoom[CHAT.uid];
+  return `<div class="panel meetcard">
+    <div class="meet-top"><div class="meet-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg></div>
+    <div><h3 style="margin:0">${esc(c.title || "연구회 화상 회의실")}</h3><p style="margin:2px 0 0;color:var(--sub);font-size:14px">${c.url ? "구글 미트로 열립니다. 회원이라면 언제든 들어갈 수 있어요." : "운영진이 아직 회의실 링크를 연결하지 않았어요."}</p></div></div>
+    ${c.url ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn primary" style="font-size:16px;padding:12px 22px" onclick='joinMeet(${JSON.stringify(c.url)},${JSON.stringify(c.title || "연구회 회의실")})'>회의실 입장</button>${meIn ? `<button class="btn" onclick="leaveMeet()">회의 나왔어요</button>` : ""}</div>` : ""}
+    <h4 style="margin:18px 0 6px;font-size:13px;color:var(--sub)">회의실에 들어간 회원 <span style="color:var(--green)">${people.length}명</span></h4>
+    ${people.length ? `<div class="meet-people">${people.map(([u, v]) => `<span class="mp"><span class="dot live"></span>${esc(v.n)}<small>${tFmt(v.t)}${v.room && v.room !== (c.title || "연구회 회의실") ? " · " + esc(v.room) : ""}</small></span>`).join("")}</div>` : '<p class="side-empty" style="margin:0">지금은 아무도 없어요</p>'}
+    <p class="sheetnote" style="margin-top:14px">입장 버튼을 누른 회원이 3시간 동안, 또는 자료실 창을 닫을 때까지 여기 표시됩니다. 처음 들어가는 분은 회의 진행자(운영진)가 참가를 수락해야 할 수 있어요.</p>
+  </div>
+  ${isAdmin() ? `<div class="panel"><h3>회의실 설정 (운영진)</h3>
+    <p style="margin:0 0 10px;font-size:13.5px;color:var(--sub)">공용 계정으로 meet.google.com → [새 회의] → [나중에 진행할 회의 만들기]를 누르면 계속 쓸 수 있는 링크가 나와요. 그 링크를 붙여 넣으세요.</p>
+    <div class="form" style="margin:0"><label for="mtt">회의실 이름</label><input type="text" id="mtt" value="${esc(c.title || "연구회 화상 회의실")}">
+    <label for="mtu">구글 미트 링크</label><input type="text" id="mtu" value="${esc(c.url || "")}" placeholder="https://meet.google.com/abc-defg-hij"></div>
+    <div class="err" id="mterr"></div><div class="mfoot" style="margin-top:8px">${c.url ? `<button class="btn" onclick="saveMeet(true)">링크 지우기</button>` : ""}<button class="btn primary" onclick="saveMeet()">저장</button></div></div>` : ""}`;
+}
+async function saveMeet(clear) {
+  try {
+    if (clear) { await CHAT.db.ref("meet").remove(); toast("회의실 링크를 지웠어요"); return; }
+    const url = $("#mtu").value.trim(), title = $("#mtt").value.trim() || "연구회 화상 회의실";
+    if (!MEET_RE.test(url)) return $("#mterr").textContent = "구글 미트 링크를 확인해 주세요. (예: https://meet.google.com/abc-defg-hij)";
+    await CHAT.db.ref("meet").set({ url, title, by: ME.name || "", t: firebase.database.ServerValue.TIMESTAMP });
+    toast("회의실 링크를 저장했어요");
+  } catch (e) { toast("저장하지 못했어요. 보안 규칙을 새로 붙여 넣었는지 확인해 주세요"); }
+}
+async function saveEvMeet(id) {
+  const url = $("#evmu").value.trim();
+  try {
+    if (!url) { await CHAT.db.ref("eventMeet/" + id).remove(); toast("이 일정의 화상 회의를 뺐어요"); closeM(); return; }
+    if (url !== "room" && !MEET_RE.test(url)) return $("#evmerr").textContent = "구글 미트 링크를 확인해 주세요.";
+    await CHAT.db.ref("eventMeet/" + id).set(url); toast("화상 회의를 연결했어요"); closeM();
+  } catch (e) { toast("저장하지 못했어요"); }
+}
+const evMeetUrl = id => { const v = MEET.ev[id]; if (!v) return ""; return v === "room" ? ((MEET.cfg || {}).url || "") : v; };
 
 /* ===== 운영진 관리 ===== */
 function adminView() {
