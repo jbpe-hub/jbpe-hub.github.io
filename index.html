@@ -131,6 +131,8 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
 .cfoot span:last-child{white-space:nowrap}
 .subtabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .subtabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 16px;font-size:14px;font-weight:500;color:var(--sub)}
+.lrow{display:flex;gap:6px;margin-top:6px}.lrow .ll{flex:0 0 38%}.lrow .lu{flex:1;min-width:0}.lrow .btn{flex:0 0 auto}
+@media(max-width:520px){.lrow{flex-wrap:wrap}.lrow .ll{flex:1 1 100%}}
 .subtabs .tabedit{margin-left:auto;border:1px dashed var(--line);background:transparent;border-radius:999px;padding:7px 12px;font-size:13px;color:var(--sub)}
 .tord .trow{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:#fff}
 .tord .tn{width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;display:grid;place-items:center}
@@ -495,19 +497,27 @@ function openM(html) { md.innerHTML = `<button class="x" onclick="closeM()" aria
 function closeM() { ov.classList.remove("show"); }
 ov.onclick = e => { if (e.target === ov) closeM(); };
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeM(); });
+function linksOf(it) {
+  return String(it.link || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
+    const i = l.indexOf(" | "); if (i < 0) return { label: "", url: l };
+    return { label: l.slice(0, i).trim(), url: l.slice(i + 3).trim() };
+  }).filter(x => /^https?:\/\//i.test(x.url));
+}
+const linkLabel = (it, l) => l.label || (it.ty === "영상" ? "영상 보기" : it.ty === "프로그램" ? "프로그램 바로 열기" : "관련 링크");
 const citeOf = it => `${it.by}(${(it.dt || "").slice(0, 4)}). ${it.t}. 전북초등체육교과연구회 자료실.`;
 
 function openItem(id) {
   const it = allItems().find(x => x.id === id); if (!it) return;
   if (ME) api("view", { id }).catch(() => {});
   const locked = it.m && !isMember();
-  const kind = it.link && !it.hasFile ? (it.ty === "영상" ? "영상 링크" : "웹 주소") : "파일";
+  const LK = linksOf(it);
+  const linkRow = l => `<div class="file"><span class="ext">LINK</span><div>${esc(linkLabel(it, l))}<small>${esc(l.url.replace(/^https?:\/\//, "").slice(0, 60))}</small></div><a class="btn primary" href="${esc(l.url)}" target="_blank" rel="noopener" style="text-decoration:none">열기</a></div>`;
   openM(`<div class="ctop"><span class="type">${esc(it.ty)}</span>${it.m ? '<span class="memb">회원만 받기</span>' : ""}</div>
    <h2 style="margin-top:8px">${esc(it.t)}</h2><p style="margin:0;color:#475467;white-space:pre-line">${esc(it.d)}</p>
    <dl class="meta"><dt>대상 학년</dt><dd>${esc(it.g.join(", "))}</dd><dt>영역</dt><dd>${esc(it.a.join(", "))}</dd><dt>올린 선생님</dt><dd>${esc(it.by)} (${esc(it.sc)})</dd><dt>올린 날</dt><dd>${esc(it.dt)}</dd><dt>조회</dt><dd>${it.v}</dd></dl>
-   <div class="file"><span class="ext">${it.hasFile ? "FILE" : "LINK"}</span><div>${esc(it.fname || it.t)}<small>${kind}</small></div>
-   ${locked ? `<button class="btn" onclick="closeM();openJoin()">회원만 내려받기</button>` : `<button class="btn primary" onclick='getFile(${JSON.stringify(it.id)})'>${it.hasFile ? "내려받기" : "열기"}</button>`}</div>
-   ${it.hasFile && it.link ? `<div class="file"><span class="ext">LINK</span><div>${esc(it.ty === "영상" ? "영상 보기" : it.ty === "프로그램" ? "프로그램 바로 열기" : "관련 링크")}<small>${esc(it.link.replace(/^https?:\/\//, "").slice(0, 60))}</small></div>${locked ? `<button class="btn" onclick="closeM();openJoin()">회원만 열기</button>` : `<a class="btn primary" href="${esc(it.link)}" target="_blank" rel="noopener" style="text-decoration:none">열기</a>`}</div>` : ""}
+   ${it.hasFile ? `<div class="file"><span class="ext">FILE</span><div>${esc(it.fname || it.t)}<small>파일</small></div>
+   ${locked ? `<button class="btn" onclick="closeM();openJoin()">회원만 내려받기</button>` : `<button class="btn primary" onclick='getFile(${JSON.stringify(it.id)})'>내려받기</button>`}</div>` : ""}
+   ${locked ? (!it.hasFile ? `<div class="file"><span class="ext">LINK</span><div>${esc(it.t)}<small>링크</small></div><button class="btn" onclick="closeM();openJoin()">회원만 열기</button></div>` : "") : LK.map(linkRow).join("")}
    ${locked ? `<div class="box2" style="margin-top:10px">이 자료는 <b>회원이 되면 내려받을 수 있어요.</b> 산출물 제출 의무 없이 가입할 수 있습니다.</div>` : ""}
    ${it.src ? `<p style="font-size:13px;margin:10px 0 0"><b>참고한 자료</b> ${esc(it.src)}</p>` : ""}
    <div class="lic">이용 조건: 출처 표시 · 비영리 · 고쳐 쓰면 출처 밝히기${it.m ? " · 회원 외 배포 금지" : ""}</div>
@@ -525,7 +535,7 @@ function saveBlob(bytes, name, type = "application/pdf") {
 const b64ToBytes = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
 async function getFile(id) {
   const it = allItems().find(x => x.id === id); if (!it) return;
-  if (!it.hasFile && it.link) { window.open(it.link, "_blank", "noopener"); return; }
+  if (!it.hasFile && linksOf(it).length) { window.open(linksOf(it)[0].url, "_blank", "noopener"); return; }
   if (!ME) { if (it.url) window.open(it.url, "_blank", "noopener"); return; }
   try {
     busy(true, "파일을 준비하는 중…");
@@ -621,7 +631,7 @@ function openUpload() {
     <label>영역 (여러 개 선택)</label><div class="pick" id="ua">${CFG.areas.map(A => `<button type="button" class="chip main" ${areaStyle(A.n)} data-a="${esc(A.n)}" onclick="this.classList.toggle('on')">${esc(A.n)}</button>` + pick(A.s, "a")).join("")}</div>
     <label for="usrc">참고한 자료 (있으면)</label><input type="text" id="usrc" placeholder="예: OO 출판사 체육 지도서, 유튜브 'OO 채널' 영상">
     <label for="uty">자료 종류</label><select id="uty">${CFG.types.map(t => `<option>${esc(t)}</option>`).join("")}</select>
-    <label>파일과 링크 (둘 중 하나, 또는 둘 다)</label><div class="drop"><input type="file" id="uf"><div style="margin-top:6px">유튜브·웹 프로그램 주소 (프로그램은 주소 + 설명서 PDF를 함께 올리면 좋아요)</div><input type="text" id="ul" placeholder="https://" style="margin-top:6px"></div>
+    <label>파일과 링크 (둘 중 하나, 또는 둘 다)</label><div class="drop"><input type="file" id="uf"><div style="margin-top:8px">링크 (유튜브·웹 프로그램 주소 등, 여러 개 넣을 수 있어요)</div><div id="ulinks">${linkInRow()}</div><button type="button" class="btn mini" style="margin-top:6px" onclick="addLinkRow()">+ 링크 추가</button></div>
     <label>누가 내려받을 수 있나요?</label><div class="radio">
      <label><input type="radio" name="sc" value="공개" checked>누구나 받기<small>로그인 없이 누구나 내려받아요</small></label>
      <label><input type="radio" name="sc" value="회원">회원만 받기<small>목록은 누구나 보고, 내려받기는 회원만</small></label></div>
@@ -630,10 +640,20 @@ function openUpload() {
    </div><div class="err" id="uerr"></div>
    <div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" onclick="sendUpload()">올리기</button></div>`);
 }
+function linkInRow() {
+  return `<div class="lrow"><input type="text" class="ll" placeholder="설명 (예: 설치 방법 영상)"><input type="text" class="lu" placeholder="https://"><button type="button" class="btn mini" onclick="this.parentElement.remove()" aria-label="이 링크 빼기">×</button></div>`;
+}
+function addLinkRow() { $("#ulinks").insertAdjacentHTML("beforeend", linkInRow()); const r = $("#ulinks").lastElementChild; r && r.querySelector(".ll").focus(); }
+function readLinks() {
+  const rows = [...document.querySelectorAll("#ulinks .lrow")].map(r => ({ label: r.querySelector(".ll").value.replace(/[|\r\n]/g, " ").trim(), url: r.querySelector(".lu").value.trim() })).filter(x => x.url || x.label);
+  const bad = rows.find(x => !/^https?:\/\/\S+$/i.test(x.url));
+  if (bad) return { err: bad.url ? "링크 주소는 https:// 로 시작해야 해요." : "설명만 있고 주소가 빈 링크가 있어요." };
+  return { text: rows.map(x => x.label ? `${x.label} | ${x.url}` : x.url).join("\n") };
+}
 async function sendUpload() {
   const t = $("#ut").value.trim(), d = $("#ud").value.trim(), err = $("#uerr");
   const g = [...document.querySelectorAll("#ug .chip.on")].map(b => b.dataset.g), a = [...document.querySelectorAll("#ua .chip.on")].map(b => b.dataset.a);
-  const file = $("#uf").files[0], link = $("#ul").value.trim();
+  const file = $("#uf").files[0], LR = readLinks(); if (LR.err) return err.textContent = LR.err; const link = LR.text;
   if (!t) return err.textContent = "자료 이름을 적어 주세요.";
   if (!g.length || !a.length) return err.textContent = "학년과 영역을 하나 이상 골라 주세요.";
   if (!file && !link) return err.textContent = "파일을 고르거나 링크를 적어 주세요.";
