@@ -1,0 +1,49 @@
+name: 자료실 배포
+
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [refresh]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"   # 한 시간마다 한 번 공개 목록 새로 고침(예비용)
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 공개 자료 목록 받기
+        run: |
+          mkdir -p data
+          API_URL=$(grep -oE 'https://script\.google\.com/macros/s/[^"]+' config.js || true)
+          if [ -z "$API_URL" ]; then echo "서버 주소가 아직 없습니다. 목록 없이 배포합니다."; exit 0; fi
+          if curl -sSL --max-time 60 "$API_URL?action=publicList" -o data/public.tmp \
+             && python3 -c "import json,sys; d=json.load(open('data/public.tmp')); sys.exit(0 if d.get('ok') else 1)"; then
+            mv data/public.tmp data/public.json
+            echo "공개 목록을 새로 받았습니다."
+          else
+            rm -f data/public.tmp
+            echo "목록을 받지 못했습니다. 사이트가 서버에서 직접 불러옵니다."
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

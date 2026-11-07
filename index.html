@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>전북초등체육교과연구회 자료실</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='15' r='10.5' fill='%23E0862B'/%3E%3Cpath d='M5 28 Q50 44 95 28' fill='none' stroke='%2317325C' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M52 37 Q49 55 28 63' fill='none' stroke='%2317325C' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M13 83 L19 73 L33 78 Q38 75 44 68' fill='none' stroke='%232F8A57' stroke-width='8.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M53 50 Q69 62 74 89 L86 86' fill='none' stroke='%232F8A57' stroke-width='8.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--navy:#17325c;--blue:#2b5797;--green:#2f8a57;--orange:#E0862B;--bg:#f4f6fa;--line:#dde3ec;--text:#1f2633;--sub:#667085;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans KR",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.55}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px}
+.demo{background:#fff6e8;border-bottom:1px solid #f0d9b5;font-size:13px;color:#8a5a14;padding:7px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+.demo b{font-weight:700}
+.demo .seg{display:inline-flex;border:1px solid #e6c48f;border-radius:999px;overflow:hidden}
+.demo .seg button{border:0;background:#fff;padding:3px 12px;font-size:12.5px;color:#8a5a14}
+.demo .seg button.on{background:var(--orange);color:#fff}
+header{background:var(--navy);color:#fff}
+.hwrap{max-width:1160px;margin:0 auto;padding:18px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{width:48px;height:48px;border-radius:12px;background:#fff;display:grid;place-items:center;flex:none;overflow:hidden}
+.brand h1{margin:0;font-size:20px;font-weight:900;letter-spacing:-.3px}
+.brand p{margin:0;font-size:12.5px;opacity:.75}
+.hright{margin-left:auto;display:flex;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:10px;padding:8px 14px;font-size:14px;font-weight:500}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.who{font-size:13px;opacity:.9;margin-right:4px}
+nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.nwrap{max-width:1160px;margin:0 auto;padding:0 20px;display:flex;gap:4px;overflow-x:auto}
+nav a{display:block;padding:13px 16px;color:var(--sub);text-decoration:none;font-weight:500;border-bottom:3px solid transparent;white-space:nowrap}
+nav a.on{color:var(--navy);border-color:var(--green);font-weight:700}
+nav a .lock{font-size:11px;background:#eef1f6;color:var(--sub);border-radius:6px;padding:1px 6px;margin-left:5px}
+main{max-width:1160px;margin:0 auto;padding:22px 20px 60px}
+.hero{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:18px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.hero h2{margin:0 0 4px;font-size:19px}
+.hero p{margin:0;color:var(--sub);font-size:14px}
+.stats{margin-left:auto;display:flex;gap:22px}
+.stat b{display:block;font-size:22px;color:var(--navy);font-weight:900}
+.stat span{font-size:12px;color:var(--sub)}
+.layout{display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:start}
+@media(max-width:860px){.layout{grid-template-columns:1fr}.stats{margin-left:0}}
+aside{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;position:sticky;top:64px}
+@media(max-width:860px){aside{position:static}}
+aside h4{margin:14px 0 8px;font-size:13px;color:var(--sub);font-weight:700}
+aside h4:first-child{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 11px;font-size:13px;color:var(--text)}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.area-group{margin-bottom:6px}
+.area-group .chip.main{font-weight:700}
+.area-group .subs{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 4px 10px}
+.area-group .subs .chip{font-size:12px;padding:2px 9px}
+.reset{margin-top:14px;width:100%;font-size:13px}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.search{flex:1;min-width:200px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#fff}
+.toolbar select{border:1px solid var(--line);border-radius:10px;padding:0 10px;background:#fff}
+.count{font-size:13px;color:var(--sub);margin:-4px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:.15s}
+.card:hover{border-color:var(--blue);box-shadow:0 6px 18px rgba(23,50,92,.08);transform:translateY(-2px)}
+.ctop{display:flex;gap:6px;align-items:center}
+.type{font-size:12px;font-weight:700;border-radius:6px;padding:2px 8px;background:#eef3fb;color:var(--blue)}
+.memb{font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 7px;background:#fdf1e3;color:#b5651d}
+.new{font-size:11.5px;font-weight:700;color:var(--green)}
+.card h3{margin:0;font-size:16px;line-height:1.4}
+.card p{margin:0;color:var(--sub);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:12px;border-radius:6px;padding:1px 7px;background:#f1f3f7;color:#475467}
+.tag.ai{background:#eaf6ef;color:var(--green);font-weight:700}
+.cfoot{margin-top:auto;display:flex;gap:8px;justify-content:space-between;font-size:12.5px;color:var(--sub);border-top:1px dashed var(--line);padding-top:8px}
+.empty{background:#fff;border:1px dashed var(--line);border-radius:14px;padding:40px;text-align:center;color:var(--sub)}
+.gate{background:#fff;border:1px solid var(--line);border-radius:16px;padding:44px 24px;text-align:center;max-width:560px;margin:30px auto}
+.gate h2{margin:10px 0 6px}
+.gate p{color:var(--sub);margin:0 0 18px}
+.gicon{width:60px;height:60px;border-radius:50%;background:#fdf1e3;display:grid;place-items:center;margin:0 auto}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+.panel h3{margin:0 0 12px;font-size:16px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:left;vertical-align:middle}
+th{color:var(--sub);font-weight:500;font-size:13px;background:#fafbfd}
+.mini{padding:4px 10px;font-size:12.5px;border-radius:8px}
+.mini.ok{background:var(--green);border-color:var(--green);color:#fff}
+.status{font-size:12px;border-radius:6px;padding:2px 8px;font-weight:700}
+.st-wait{background:#fdf1e3;color:#b5651d}.st-ok{background:#eaf6ef;color:var(--green)}.st-no{background:#f1f3f7;color:var(--sub)}
+.sheetnote{font-size:12.5px;color:var(--sub);margin-top:10px}
+.overlay{position:fixed;inset:0;background:rgba(15,25,45,.45);display:none;align-items:flex-start;justify-content:center;z-index:20;padding:40px 14px;overflow-y:auto}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:18px;max-width:620px;width:100%;padding:22px 24px;position:relative}
+.modal h2{margin:0 0 6px;font-size:20px}
+.x{position:absolute;right:14px;top:12px;border:0;background:none;font-size:22px;color:var(--sub)}
+.meta{display:grid;grid-template-columns:90px 1fr;gap:6px 10px;font-size:14px;margin:14px 0}
+.meta dt{color:var(--sub)}.meta dd{margin:0}
+.file{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:6px 0}
+.file .ext{width:40px;height:40px;border-radius:9px;background:#eef3fb;color:var(--blue);display:grid;place-items:center;font-weight:900;font-size:12px}
+.file div{flex:1;font-size:14px}.file small{display:block;color:var(--sub)}
+.form label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}
+.form input[type=text],.form textarea,.form select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.form textarea{min-height:70px;resize:vertical}
+.pick{display:flex;flex-wrap:wrap;gap:6px}
+.radio{display:flex;gap:8px}
+.radio label{flex:1;margin:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:500;cursor:pointer}
+.radio input{margin-right:6px}
+.radio label small{display:block;color:var(--sub);font-weight:400;margin-left:20px}
+.check{display:flex;gap:8px;align-items:flex-start;font-weight:400!important;font-size:13.5px!important;background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:6px 0!important}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--sub);font-size:13.5px}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.err{color:#c0392b;font-size:13px;margin-top:8px;min-height:18px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:30;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
+.cfoot span:last-child{white-space:nowrap}
+.subtabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.subtabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 16px;font-size:14px;font-weight:500;color:var(--sub)}
+.subtabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.subtabs .cnt{font-size:11px;background:var(--orange);color:#fff;border-radius:999px;padding:0 6px;margin-left:5px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.cal div{border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-height:84px;padding:5px 6px;font-size:12.5px}
+.cal .dh{min-height:auto;background:#fafbfd;color:var(--sub);text-align:center;font-weight:700}
+.cal .off{background:#fafbfd;color:#c4cad4}
+.cal .today .dn{background:var(--green);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-grid;place-items:center}
+.cal .ev{display:block;margin-top:3px;background:#eaf6ef;color:#256b44;border-radius:5px;padding:2px 5px;font-size:11.5px;line-height:1.3;cursor:pointer}
+.cal .ev.big{background:#fdf1e3;color:#9a5512}
+.calhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.calhead h3{margin:0}
+.calhead .sp{margin-left:auto}
+.evlist{margin-top:14px}
+.evrow{display:flex;gap:14px;align-items:center;border-bottom:1px solid var(--line);padding:11px 2px}
+.evdate{width:58px;text-align:center;flex:none}
+.evdate b{display:block;font-size:20px;color:var(--navy);line-height:1.1}
+.evdate span{font-size:12px;color:var(--sub)}
+.evrow .info{flex:1}.evrow .info small{display:block;color:var(--sub)}
+.att{font-size:12.5px;color:var(--sub);white-space:nowrap}
+.btn.on-att{background:#eaf6ef;border-color:var(--green);color:var(--green);font-weight:700}
+.notice{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.notice .nh{display:flex;gap:8px;align-items:center}
+.pin{font-size:11.5px;font-weight:700;background:#fdf1e3;color:#b5651d;border-radius:6px;padding:1px 7px}
+.notice h3{margin:0;font-size:16px}
+.notice .nm{font-size:12.5px;color:var(--sub);margin:3px 0 8px}
+.notice .body{white-space:pre-line;font-size:14.5px}
+.cmts{margin-top:12px;background:#fafbfd;border-radius:10px;padding:8px 12px}
+.cmt{padding:7px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.cmt:last-of-type{border-bottom:0}
+.cmt b{font-size:13px}.cmt span{color:var(--sub);font-size:12px;margin-left:6px}
+.cform{display:flex;gap:6px;margin-top:8px}
+.cform input{flex:1;border:1px solid var(--line);border-radius:9px;padding:7px 10px}
+.booktools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.booktools input[type=text]{border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:260px}
+.bookrow{display:flex;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.bookrow input{width:17px;height:17px}
+.bookrow .info{flex:1}.bookrow small{color:var(--sub)}
+#bookView{position:fixed;inset:0;background:#5b6472;z-index:40;overflow-y:auto;display:none}
+#bookView.show{display:block}
+.bbar{position:sticky;top:0;background:#1f2633;color:#fff;padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:2}
+.bbar span{flex:1;font-size:14px}
+.page{width:210mm;min-height:297mm;background:#fff;margin:18px auto;padding:22mm 20mm;box-shadow:0 4px 18px rgba(0,0,0,.25);position:relative;font-size:10.5pt}
+.page .pno{position:absolute;bottom:10mm;left:0;right:0;text-align:center;font-size:9pt;color:#999}
+.bcover{display:flex;flex-direction:column;justify-content:center;background:linear-gradient(160deg,#17325c 0%,#2b5797 65%,#2f8a57 100%);color:#fff}
+.bcover .yr{font-size:14pt;opacity:.8;letter-spacing:2px}
+.bcover h1{font-size:32pt;margin:8mm 0 4mm;line-height:1.25;font-weight:900}
+.bcover .org{margin-top:auto;font-size:14pt;font-weight:700;border-top:1px solid rgba(255,255,255,.4);padding-top:6mm}
+.page h2{color:#17325c;font-size:18pt;border-bottom:2px solid #17325c;padding-bottom:3mm;margin:0 0 6mm}
+.toc-sec{font-weight:700;color:#2b5797;margin:5mm 0 2mm}
+.toc{display:flex;gap:6px;font-size:10.5pt;margin:1.5mm 0}
+.toc .dots{flex:1;border-bottom:1px dotted #aaa;margin-bottom:4px}
+.bitem{border:1px solid #d5dce8;border-radius:3mm;padding:6mm;margin-bottom:6mm;page-break-inside:avoid}
+.bitem .bsec{font-size:9pt;color:#2f8a57;font-weight:700}
+.bitem h3{margin:1mm 0 3mm;font-size:14pt;color:#17325c}
+.bitem table{font-size:9.5pt;margin-bottom:3mm}
+.bitem th{width:24mm;background:#f3f6fb}
+.bitem th,.bitem td{border:1px solid #dde3ec;padding:1.5mm 2.5mm}
+.bitem .link{font-size:9pt;color:#555;margin-top:3mm}
+.bdiv{display:flex;flex-direction:column;justify-content:center;background:#f3f6fb}
+.bdiv .dnum{font-size:48pt;font-weight:900;color:#c9d4e6;line-height:1}
+.bdiv .dname{font-size:30pt;font-weight:900;color:#17325c;margin:3mm 0 8mm;border-bottom:3px solid #2f8a57;padding-bottom:4mm}
+.bdiv .dlist div{font-size:11pt;color:#444;margin:1.5mm 0}
+.bhead{position:absolute;top:10mm;left:20mm;right:20mm;text-align:center;font-size:7.5pt;color:#8a8f98;border-bottom:.5px solid #d0d5dd;padding-bottom:1.5mm}
+.msph{display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#fafbfd,#fafbfd 10px,#f3f5f9 10px,#f3f5f9 20px)}
+.mscard{background:#fff;border:1.5px dashed #9aa6b8;border-radius:4mm;padding:12mm 14mm;text-align:center;display:flex;flex-direction:column;gap:2mm;max-width:130mm}
+.mscard b{font-size:15pt;color:#17325c}.mscard span{color:#444}.mscard small{color:#888}
+.msico{width:16mm;height:16mm;border-radius:3mm;background:#d9534f;color:#fff;font-weight:900;display:grid;place-items:center;margin:0 auto 2mm}
+.bnote{max-width:210mm;margin:14px auto 0;color:#e8ecf2;font-size:13px;text-align:center}
+.bookrow .status{flex:none}
+@media print{
+  body>*:not(#bookView){display:none!important}
+  #bookView{position:static;background:#fff;display:block}
+  .bbar{display:none}
+  .page{margin:0;box-shadow:none;page-break-after:always}
+  @page{size:A4;margin:0}
+}
+.box2{background:#eef6f1;border:1px solid #cfe6d8;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:10px;color:#24543a}
+.cite{display:flex;gap:10px;align-items:center;background:#f6f8fc;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13px}
+.cite div{flex:1}.cite b{display:block;font-size:12px;color:var(--sub)}
+.guestbar{display:flex;gap:10px;align-items:center;background:#fff6e8;border:1px solid #f0d9b5;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-size:14px;color:#6b4510;flex-wrap:wrap}
+.guestbar div{flex:1;min-width:240px}
+.logoprev{width:72px;height:72px;border:1px dashed var(--line);border-radius:12px;display:grid;place-items:center;color:var(--sub);font-size:12px;text-align:center;background:#fafbfd;overflow:hidden}
+.logoprev img{width:100%;height:100%;object-fit:contain}
+.protect{margin:14px 0 0;padding-left:18px;font-size:13.5px;color:#475467}.protect li{margin:4px 0}
+.lic{font-size:12px;color:var(--sub);margin-top:8px}
+.box3{background:#eef3fb;border:1px solid #cfdbef;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:8px;color:#1d3c6e}
+footer .flogo{display:inline-block;vertical-align:middle;margin-right:6px;line-height:0}
+
+.notice-bar{background:#fdecea;color:#8a1f11;border-bottom:1px solid #f5c2bb;padding:8px 16px;font-size:13.5px;text-align:center}
+.loading{padding:60px;text-align:center;color:var(--sub)}
+.busy{position:fixed;inset:0;background:rgba(255,255,255,.6);display:none;align-items:center;justify-content:center;z-index:50;font-weight:700;color:var(--navy)}
+.busy.show{display:flex}
+.status-pill{font-size:12px;border-radius:999px;padding:2px 10px;background:#fdf1e3;color:#b5651d;margin-left:6px}
+</style>
+</head>
+<body>
+<div id="setupBar" class="notice-bar" style="display:none"></div>
+<header><div class="hwrap">
+  <div class="logo" id="logoBox"></div>
+  <div class="brand"><h1>전북초등체육교과연구회 자료실</h1><p>선생님들이 함께 만들고 나누는 초등 체육 수업 자료</p></div>
+  <div class="hright" id="hright"></div>
+</div></header>
+<nav><div class="nwrap">
+  <a href="#public" data-v="public">공개 자료실</a>
+  <a href="#members" data-v="members">회원 전용 자료방<span class="lock" id="lockTag">회원</span></a>
+  <a href="#mine" data-v="mine" id="navMine">내가 올린 자료</a>
+  <a href="#admin" data-v="admin" id="navAdmin">운영진 관리</a>
+</div></nav>
+<main id="main"><div class="loading">자료를 불러오는 중입니다…</div></main>
+<footer><span class="flogo" id="footLogo"></span>전북초등체육교과연구회 · 자료 이용 시 출처를 밝혀 주세요 · 학생 개인정보가 담긴 자료는 올리지 않습니다</footer>
+<div class="overlay" id="ov"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+<div class="busy" id="busy"><span id="busyTxt">처리 중…</span></div>
+<script>
+/* ===== 설정 (여기 두 줄만 바꾸면 됩니다) ===== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCtc18NQqggoKHnuOqC-3u7uRdF-6Zn73Q",
+  authDomain: "jbpe-hub.firebaseapp.com",
+  projectId: "jbpe-hub",
+  storageBucket: "jbpe-hub.firebasestorage.app",
+  messagingSenderId: "715458125549",
+  appId: "1:715458125549:web:4ac3ba5743cb7bbaecb6e4"
+};
+const API_URL = window.JBPE_API_URL || "__API_URL__"; // config.js 에서 설정
+
+/* ===== 로고 ===== */
+const SYM_T = '<circle cx="50" cy="15" r="10.5" fill="{o}"/><path d="M5 28 Q50 44 95 28" fill="none" stroke="{n}" stroke-width="10" stroke-linecap="round"/><path d="M52 37 Q49 55 28 63" fill="none" stroke="{n}" stroke-width="10" stroke-linecap="round"/><path d="M13 83 L19 73 L33 78 Q38 75 44 68" fill="none" stroke="{g}" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M53 50 Q69 62 74 89 L86 86" fill="none" stroke="{g}" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>';
+const symSvg = (size, n = "#17325C", g = "#2F8A57", o = "#E0862B") =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="전북초등체육교과연구회 로고">` + SYM_T.replace(/\{n\}/g, n).replace(/\{g\}/g, g).replace(/\{o\}/g, o) + "</svg>";
+
+/* ===== 상태 ===== */
+let CFG = { grades: [], areas: [], types: [], bookTitle: "" };
+let PUB = [];          // 공개 목록(손님용)
+let ME = null;         // 로그인한 사람 정보
+let MD = null;         // 회원 데이터(회원만)
+let AD = null;         // 운영진 데이터
+let view = "public", msub = "files", calM = new Date();
+let f = { q: "", g: [], a: [], ty: [], sort: "new" };
+let bookSel = new Set(), bookTitle = "", bookMine = false;
+calM = new Date(calM.getFullYear(), calM.getMonth(), 1);
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const TODAY = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2800); }
+function busy(on, txt) { $("#busyTxt").textContent = txt || "처리 중…"; $("#busy").classList.toggle("show", !!on); }
+const isMember = () => !!(ME && ME.member);
+const isAdmin = () => !!(ME && ME.admin);
+
+/* ===== 파이어베이스 로그인 ===== */
+firebase.initializeApp(FIREBASE_CONFIG);
+const AUTH = firebase.auth();
+async function login() {
+  try { await AUTH.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  catch (e) { if (e.code !== "auth/popup-closed-by-user") toast("로그인하지 못했어요: " + (e.message || e.code)); }
+}
+async function logout() { await AUTH.signOut(); ME = null; MD = null; AD = null; if (["mine", "admin"].includes(view)) go("public"); render(); }
+
+/* ===== 서버 호출 ===== */
+const apiReady = () => API_URL && !API_URL.startsWith("__");
+async function api(action, data = {}) {
+  if (!apiReady()) throw new Error("아직 서버 주소(API_URL)가 설정되지 않았습니다.");
+  const token = AUTH.currentUser ? await AUTH.currentUser.getIdToken() : null;
+  const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, token, ...data }) });
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error || "서버 오류");
+  return j;
+}
+async function loadPublic(fresh) {
+  let j = null;
+  if (!fresh) { try { const r = await fetch("data/public.json?t=" + Date.now()); if (r.ok) j = await r.json(); } catch (e) {} }
+  if ((!j || !j.ok) && apiReady()) { try { j = await (await fetch(API_URL + "?action=publicList")).json(); } catch (e) {} }
+  if (j && j.ok) { CFG = j.config; PUB = j.items; if (!bookTitle) bookTitle = CFG.bookTitle || "연구회 수업 자료집"; }
+}
+async function loadMember() { if (isMember()) { MD = await api("memberData"); } }
+async function loadAdmin() { if (isAdmin()) { AD = await api("adminData"); } }
+async function reloadAll(fresh = true) { await loadPublic(fresh); if (isMember()) await loadMember(); if (isAdmin() && view === "admin") await loadAdmin(); render(); }
+
+AUTH.onAuthStateChanged(async user => {
+  if (!user) { ME = null; MD = null; render(); return; }
+  try {
+    ME = (await api("me")).me;
+    if (ME.status === "없음") { render(); openJoin(); return; }
+    await loadMember();
+    if (view === "admin") await loadAdmin();
+  } catch (e) { toast(e.message); }
+  render();
+});
+
+/* ===== 공통 데이터 ===== */
+const allItems = () => (MD ? MD.items : PUB);
+const AREA_MAIN = () => CFG.areas.map(A => A.n);
+const isAiTag = a => { const ai = CFG.areas.find(A => A.n.startsWith("AI")); return a.startsWith("AI") || (ai && ai.s.includes(a)); };
+const mainArea = it => AREA_MAIN().find(n => it.a.includes(n)) || "기타";
+
+/* ===== 머리 · 메뉴 ===== */
+function header() {
+  const h = $("#hright");
+  if (!ME) h.innerHTML = `<button class="btn ghost" onclick="openJoin()">가입 신청</button><button class="btn primary" onclick="login()">구글 계정으로 로그인</button>`;
+  else {
+    const st = ME.member ? "" : `<span class="status-pill">${ME.status === "대기" ? "승인 대기 중" : ME.status === "보류" ? "가입 보류" : "가입 전"}</span>`;
+    h.innerHTML = `<span class="who">${ME.admin ? "운영진 " : ""}${esc(ME.name || ME.email)}${ME.name ? " 선생님" : ""}${st}</span>${ME.member ? `<button class="btn primary" onclick="openUpload()">자료 올리기</button>` : (ME.status === "없음" || ME.status === "보류" ? `<button class="btn primary" onclick="openJoin()">가입 신청</button>` : "")}<button class="btn ghost" onclick="logout()">로그아웃</button>`;
+  }
+  $("#lockTag").style.display = isMember() ? "none" : "";
+  $("#navMine").style.display = isMember() ? "" : "none";
+  $("#navAdmin").style.display = isAdmin() ? "" : "none";
+  document.querySelectorAll("nav a").forEach(a => a.classList.toggle("on", a.dataset.v === view));
+}
+function go(v) { view = v; try { history.replaceState(null, "", "#" + v); } catch (e) {} }
+
+/* ===== 목록 ===== */
+function match(it) {
+  if (f.q) { const q = f.q.toLowerCase(); if (!(it.t + it.d + it.by + it.a.join()).toLowerCase().includes(q)) return false; }
+  if (f.g.length && !f.g.some(x => it.g.includes(x))) return false;
+  if (f.a.length && !f.a.some(x => it.a.includes(x))) return false;
+  if (f.ty.length && !f.ty.includes(it.ty)) return false;
+  return true;
+}
+function tog(k, x) { const i = f[k].indexOf(x); i < 0 ? f[k].push(x) : f[k].splice(i, 1); render(); }
+function chipRow(list, key) { return list.map(x => `<button class="chip ${f[key].includes(x) ? "on" : ""}" onclick='tog("${key}",${JSON.stringify(x)})'>${esc(x)}</button>`).join(""); }
+function filters() {
+  return `<aside>
+   <h4>학년</h4><div class="chips">${chipRow(CFG.grades, "g")}</div>
+   <h4>영역</h4>
+   ${CFG.areas.map(A => `<div class="area-group"><button class="chip main ${f.a.includes(A.n) ? "on" : ""}" onclick='tog("a",${JSON.stringify(A.n)})'>${esc(A.n)}</button>${A.s.length ? `<div class="subs">${chipRow(A.s, "a")}</div>` : ""}</div>`).join("")}
+   <h4>자료 종류</h4><div class="chips">${chipRow(CFG.types, "ty")}</div>
+   <button class="btn reset" onclick="f={q:'',g:[],a:[],ty:[],sort:f.sort};render()">필터 모두 지우기</button>
+  </aside>`;
+}
+function card(it) {
+  const isNew = (new Date(TODAY) - new Date(it.dt)) / 864e5 < 7;
+  return `<div class="card" onclick='openItem(${JSON.stringify(it.id)})'>
+   <div class="ctop"><span class="type">${esc(it.ty)}</span>${it.m ? `<span class="memb">${isMember() ? "회원 전용" : "회원 전용 · 내려받기 잠김"}</span>` : ""}${isNew ? '<span class="new">NEW</span>' : ""}</div>
+   <h3>${esc(it.t)}</h3><p>${esc(it.d)}</p>
+   <div class="tags">${it.g.map(g => `<span class="tag">${esc(g)}</span>`).join("")}${it.a.map(a => `<span class="tag ${isAiTag(a) ? "ai" : ""}">${esc(a)}</span>`).join("")}</div>
+   <div class="cfoot"><span>${esc(it.by)} · ${esc(it.sc)}</span><span>${esc((it.dt || "").slice(5).replace("-", "."))} · 조회 ${it.v}</span></div></div>`;
+}
+function listView(src, title, desc) {
+  let list = src.filter(match);
+  list.sort(f.sort === "pop" ? (a, b) => b.v - a.v : (a, b) => b.dt.localeCompare(a.dt));
+  const ai = src.filter(i => i.a.some(isAiTag)).length, teachers = new Set(src.map(i => i.by)).size;
+  return `<div class="hero"><div><h2>${title}</h2><p>${desc}</p></div>
+   <div class="stats"><div class="stat"><b>${src.length}</b><span>전체 자료</span></div><div class="stat"><b>${ai}</b><span>AI·에듀테크</span></div><div class="stat"><b>${teachers}</b><span>나눈 선생님</span></div></div></div>
+   <div class="layout">${filters()}<section>
+    <div class="toolbar"><input class="search" id="q" placeholder="자료 이름, 내용, 선생님 이름으로 찾기" value="${esc(f.q)}">
+     <select id="sort"><option value="new" ${f.sort === "new" ? "selected" : ""}>최신순</option><option value="pop" ${f.sort === "pop" ? "selected" : ""}>많이 본 순</option></select></div>
+    <div class="count">${list.length}개 자료</div>
+    ${list.length ? `<div class="grid">${list.map(card).join("")}</div>` : `<div class="empty">${src.length ? "조건에 맞는 자료가 없습니다. 필터를 줄여 보세요." : "아직 올라온 자료가 없습니다."}</div>`}
+   </section></div>`;
+}
+
+/* ===== 화면 그리기 ===== */
+function render() {
+  header();
+  const m = $("#main");
+  if (view === "public") m.innerHTML = listView(allItems().filter(i => !i.m), "공개 자료실", "누구나 로그인 없이 보고 내려받을 수 있는 연구회 수업 자료입니다.");
+  else if (view === "members") {
+    if (!isMember() && msub === "files") m.innerHTML = memberTabs() + `<div class="guestbar"><div><b>회원 전용 자료방 미리 보기</b><br>목록과 설명은 누구나 볼 수 있고, 내려받기는 회원만 할 수 있어요. 산출물 제출 의무 없이 가입할 수 있습니다.</div>${ME ? "" : `<button class="btn" onclick="login()">로그인</button>`}${!ME || ME.status === "없음" ? `<button class="btn primary" onclick="openJoin()">가입 신청</button>` : `<span class="status-pill">${ME.status === "대기" ? "승인 대기 중" : "가입 " + esc(ME.status)}</span>`}</div>` + listView(allItems().filter(i => i.m), "회원 전용 자료", "연구회 선생님들이 회원끼리 먼저 나누는 자료입니다.");
+    else if (!isMember()) m.innerHTML = memberTabs() + `<div class="gate"><div class="gicon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b5651d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h2>회원만 볼 수 있어요</h2><p>자율연수 일정, 공지, 산출물 책자는 승인된 회원에게만 열립니다.<br>산출물 제출 의무 없이 가입할 수 있어요.</p>${ME ? "" : `<button class="btn primary" onclick="login()">구글 계정으로 로그인</button> `}<button class="btn" onclick="openJoin()">가입 신청</button></div>`;
+    else m.innerHTML = memberTabs() + (msub === "files" ? listView(MD.items.filter(i => i.m), "회원 전용 자료", "승인된 회원만 내려받을 수 있는 자료입니다. 외부로 옮기거나 공유하지 말아 주세요.") : msub === "cal" ? calView() : msub === "notice" ? noticeView() : bookView());
+  }
+  else if (view === "mine") {
+    if (!isMember()) { go("public"); return render(); }
+    const mine = MD.items.filter(i => i.own);
+    m.innerHTML = `<div class="panel"><h3>내가 올린 자료 (${mine.length})</h3>${mine.length ? `<table><tr><th>자료</th><th>공개 범위</th><th>올린 날</th><th>조회</th><th></th></tr>${mine.map(i => `<tr><td>${esc(i.t)}</td><td>${i.m ? '<span class="status st-wait">회원 전용</span>' : '<span class="status st-ok">공개</span>'}</td><td>${esc(i.dt)}</td><td>${i.v}</td><td style="text-align:right"><button class="btn mini" onclick='flip(${JSON.stringify(i.id)})'>${i.m ? "공개로 전환" : "회원 전용으로"}</button> <button class="btn mini" onclick='hideItem(${JSON.stringify(i.id)})'>내리기</button></td></tr>`).join("")}</table>` : '<p style="color:var(--sub)">아직 올린 자료가 없습니다.</p>'}</div>`;
+  }
+  else if (view === "admin") {
+    if (!isAdmin()) { go("public"); return render(); }
+    m.innerHTML = AD ? adminView() : `<div class="loading">불러오는 중…</div>`;
+    if (!AD) loadAdmin().then(render).catch(e => toast(e.message));
+  }
+  const q = $("#q"); if (q) q.oninput = e => { f.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $("#q"); n.focus(); n.setSelectionRange(pos, pos); };
+  const s = $("#sort"); if (s) s.onchange = e => { f.sort = e.target.value; render(); };
+}
+
+/* ===== 자료 상세 · 내려받기 ===== */
+const ov = $("#ov"), md = $("#modal");
+function openM(html) { md.innerHTML = `<button class="x" onclick="closeM()" aria-label="닫기">×</button>` + html; ov.classList.add("show"); }
+function closeM() { ov.classList.remove("show"); }
+ov.onclick = e => { if (e.target === ov) closeM(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeM(); });
+const citeOf = it => `${it.by}(${(it.dt || "").slice(0, 4)}). ${it.t}. 전북초등체육교과연구회 자료실.`;
+
+function openItem(id) {
+  const it = allItems().find(x => x.id === id); if (!it) return;
+  if (ME) api("view", { id }).catch(() => {});
+  const locked = it.m && !isMember();
+  const kind = it.link && !it.hasFile ? (it.ty === "영상" ? "영상 링크" : "웹 주소") : "파일";
+  openM(`<div class="ctop"><span class="type">${esc(it.ty)}</span>${it.m ? '<span class="memb">회원 전용</span>' : ""}</div>
+   <h2 style="margin-top:8px">${esc(it.t)}</h2><p style="margin:0;color:#475467;white-space:pre-line">${esc(it.d)}</p>
+   <dl class="meta"><dt>대상 학년</dt><dd>${esc(it.g.join(", "))}</dd><dt>영역</dt><dd>${esc(it.a.join(", "))}</dd><dt>올린 선생님</dt><dd>${esc(it.by)} (${esc(it.sc)})</dd><dt>올린 날</dt><dd>${esc(it.dt)}</dd><dt>조회</dt><dd>${it.v}</dd></dl>
+   <div class="file"><span class="ext">${it.hasFile ? "FILE" : "LINK"}</span><div>${esc(it.fname || it.t)}<small>${kind}</small></div>
+   ${locked ? `<button class="btn" onclick="closeM();openJoin()">회원만 내려받기</button>` : `<button class="btn primary" onclick='getFile(${JSON.stringify(it.id)})'>${it.hasFile ? "내려받기" : "열기"}</button>`}</div>
+   ${locked ? `<div class="box2" style="margin-top:10px">회원 전용 자료는 <b>회원이 되면 내려받을 수 있어요.</b> 산출물 제출 의무 없이 가입할 수 있습니다.</div>` : ""}
+   ${it.src ? `<p style="font-size:13px;margin:10px 0 0"><b>참고한 자료</b> ${esc(it.src)}</p>` : ""}
+   <div class="lic">이용 조건: 출처 표시 · 비영리 · 고쳐 쓰면 출처 밝히기${it.m ? " · 회원 외 배포 금지" : ""}</div>
+   <div class="cite"><div><b>출처 표기</b><span id="citeTxt">${esc(citeOf(it))}</span></div><button class="btn mini" onclick="copyText($('#citeTxt').textContent,'출처를 복사했습니다')">출처 복사</button></div>`);
+}
+async function copyText(t, msg) {
+  try { await navigator.clipboard.writeText(t); toast(msg); }
+  catch (e) { openM(`<h2>복사하기</h2><p style="color:var(--sub);font-size:13px">아래 내용을 선택해 복사해 주세요.</p><textarea style="width:100%;min-height:160px">${esc(t)}</textarea>`); }
+}
+function saveBlob(bytes, name, type = "application/pdf") {
+  const url = URL.createObjectURL(new Blob([bytes], { type }));
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+const b64ToBytes = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+async function getFile(id) {
+  const it = allItems().find(x => x.id === id); if (!it) return;
+  if (!it.hasFile && it.link) { window.open(it.link, "_blank", "noopener"); return; }
+  if (!ME) { if (it.url) window.open(it.url, "_blank", "noopener"); return; }
+  try {
+    busy(true, "파일을 준비하는 중…");
+    const r = await api("getFile", { id });
+    if (r.b64) {
+      const marked = await watermark(b64ToBytes(r.b64));
+      saveBlob(marked, r.name.replace(/\.pdf$/i, "") + ".pdf");
+      toast("내려받았습니다. 쪽마다 연구회 표시와 내려받은 선생님 이름이 찍혀 있어요");
+    } else if (r.url) window.open(r.url, "_blank", "noopener");
+  } catch (e) { toast(e.message); }
+  finally { busy(false); }
+}
+
+/* 워터마크: 쪽 크기에 맞춘 투명 그림을 만들어 위에 덮기 */
+function symPng(px) {
+  return new Promise((res, rej) => { const img = new Image(); img.onload = () => { const c = document.createElement("canvas"); c.width = c.height = px; c.getContext("2d").drawImage(img, 0, 0, px, px); res(c); }; img.onerror = rej; img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(symSvg(px)); });
+}
+async function overlayPng(W, H, foot) {
+  const s = 2, c = document.createElement("canvas"); c.width = Math.round(W * s); c.height = Math.round(H * s);
+  const x = c.getContext("2d");
+  try { const logo = await symPng(240); x.globalAlpha = 0.07; const L = Math.min(W, H) * 0.32 * s; x.drawImage(logo, (c.width - L) / 2, c.height / 2 - L * 1.05, L, L); } catch (e) {}
+  x.globalAlpha = 0.09; x.fillStyle = "#17325C"; x.textAlign = "center"; x.textBaseline = "middle";
+  x.font = `700 ${Math.round(Math.min(W, H) * 0.075 * s)}px "Noto Sans KR", sans-serif`;
+  x.save(); x.translate(c.width / 2, c.height / 2); x.rotate(-Math.atan2(H, W)); x.fillText("전북초등체육교과연구회", 0, 0); x.restore();
+  x.globalAlpha = 1; x.fillStyle = "#9aa1ab"; x.font = `500 ${7 * s}px "Noto Sans KR", sans-serif`; x.fillText(foot, c.width / 2, c.height - 12 * s);
+  return c.toDataURL("image/png");
+}
+async function watermark(bytes) {
+  const doc = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+  const foot = `${ME.name || ME.email} 선생님 · ${TODAY} 내려받음 · 전북초등체육교과연구회 자료실 · 무단 전재·배포 금지`;
+  const cache = {};
+  for (const pg of doc.getPages()) {
+    const { width: W, height: H } = pg.getSize(), k = `${Math.round(W)}x${Math.round(H)}`;
+    if (!cache[k]) cache[k] = await doc.embedPng(await overlayPng(W, H, foot));
+    pg.drawImage(cache[k], { x: 0, y: 0, width: W, height: H });
+  }
+  return await doc.save();
+}
+
+/* ===== 가입 ===== */
+async function openJoin() {
+  if (!ME) { await login(); return; }
+  if (ME.status === "대기") { toast("가입 신청이 접수되어 운영진 승인을 기다리고 있어요"); return; }
+  if (ME.member) { toast("이미 회원입니다"); return; }
+  openM(`<h2>회원 가입 신청</h2><p style="margin:0;color:var(--sub);font-size:14px">${esc(ME.email)} 계정으로 신청합니다. 운영진 승인 후 회원 전용 자료방의 자료를 내려받을 수 있어요.</p>
+   <div class="box2"><b>산출물 제출 의무는 없습니다.</b> 자료를 올리지 않아도 회원이 될 수 있어요. 대신 연말 산출물 책자에 <b>참여 회원으로 이름을 올려</b> 주시면 연구회에 큰 힘이 됩니다.</div>
+   <div class="box3">가입하시면 <b>내년도 전북특별자치도교육청 교과연구회 등록 때 회원 명단</b>에 이름과 소속 학교가 들어갈 수 있습니다. 명단에는 이름·소속만 들어가며, 원하지 않으시면 아래 체크를 풀어 주세요.</div>
+   <div class="form"><label for="jn">이름</label><input type="text" id="jn" placeholder="예: 홍길동"><label for="js">소속 학교</label><input type="text" id="js" placeholder="예: 햇살초등학교">
+   <label class="check"><input type="checkbox" id="jreg" checked> 내년도 도교육청 연구회 등록 회원 명단에 이름(소속)을 올리는 데 동의합니다.</label>
+   <label class="check"><input type="checkbox" id="jnm" checked> 연말 산출물 책자에 참여 회원으로 이름(소속)을 올리는 데 동의합니다.</label>
+   <label class="check"><input type="checkbox" id="jc"> 회원 전용 자료를 외부로 옮기거나 공유하지 않고, 자료를 쓸 때 출처를 밝히겠습니다.</label></div>
+   <div class="err" id="jerr"></div>
+   <div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" onclick="sendJoin()">신청하기</button></div>`);
+}
+async function sendJoin() {
+  const name = $("#jn").value.trim(), school = $("#js").value.trim();
+  if (!name || !school) { $("#jerr").textContent = "이름과 소속을 적어 주세요."; return; }
+  if (!$("#jc").checked) { $("#jerr").textContent = "회원 자료 이용 약속에 체크해 주세요."; return; }
+  try { busy(true); ME = (await api("join", { name, school, book: $("#jnm").checked, reg: $("#jreg").checked })).me; closeM(); render(); toast("가입 신청을 보냈습니다. 운영진이 승인하면 회원 전용 자료방이 열려요"); }
+  catch (e) { $("#jerr").textContent = e.message; } finally { busy(false); }
+}
+
+/* ===== 자료 올리기 ===== */
+function fileToB64(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); }); }
+function openUpload() {
+  const pick = (list, name) => list.map(x => `<button type="button" class="chip" data-${name}="${esc(x)}" onclick="this.classList.toggle('on')">${esc(x)}</button>`).join("");
+  openM(`<h2>자료 올리기</h2>
+   <div class="form">
+    <label for="ut">자료 이름</label><input type="text" id="ut" placeholder="예: 5학년 전략형 게임 수업 지도안">
+    <label for="ud">설명</label><textarea id="ud" placeholder="어떤 수업에서 어떻게 쓰는 자료인지 짧게 적어 주세요. 회원 전용 자료도 제목과 설명은 누구나 볼 수 있으니 내부 사정은 적지 말아 주세요."></textarea>
+    <label>대상 학년 (여러 개 선택)</label><div class="pick" id="ug">${pick(CFG.grades, "g")}</div>
+    <label>영역 (여러 개 선택)</label><div class="pick" id="ua">${CFG.areas.map(A => pick([A.n, ...A.s], "a")).join("")}</div>
+    <label for="usrc">참고한 자료 (있으면)</label><input type="text" id="usrc" placeholder="예: OO 출판사 체육 지도서, 유튜브 'OO 채널' 영상">
+    <label for="uty">자료 종류</label><select id="uty">${CFG.types.map(t => `<option>${esc(t)}</option>`).join("")}</select>
+    <label>파일 또는 링크</label><div class="drop"><input type="file" id="uf"><div style="margin-top:6px">또는 유튜브·웹 프로그램 주소 (영상은 유튜브 일부 공개 링크로)</div><input type="text" id="ul" placeholder="https://" style="margin-top:6px"></div>
+    <label>공개 범위</label><div class="radio">
+     <label><input type="radio" name="sc" value="공개" checked>공개 자료실<small>누구나 볼 수 있어요</small></label>
+     <label><input type="radio" name="sc" value="회원">회원 전용 자료방<small>내려받기는 회원만</small></label></div>
+    <label class="check"><input type="checkbox" id="c1"> 학생 얼굴이 알아보이는 사진·영상이나 학생 실명이 들어 있지 않습니다.</label>
+    <label class="check"><input type="checkbox" id="c2"> 교과서·출판사 자료 등 다른 사람의 저작물 원본이 아닙니다.</label>
+   </div><div class="err" id="uerr"></div>
+   <div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" onclick="sendUpload()">올리기</button></div>`);
+}
+async function sendUpload() {
+  const t = $("#ut").value.trim(), d = $("#ud").value.trim(), err = $("#uerr");
+  const g = [...document.querySelectorAll("#ug .chip.on")].map(b => b.dataset.g), a = [...document.querySelectorAll("#ua .chip.on")].map(b => b.dataset.a);
+  const file = $("#uf").files[0], link = $("#ul").value.trim();
+  if (!t) return err.textContent = "자료 이름을 적어 주세요.";
+  if (!g.length || !a.length) return err.textContent = "학년과 영역을 하나 이상 골라 주세요.";
+  if (!file && !link) return err.textContent = "파일을 고르거나 링크를 적어 주세요.";
+  if (file && file.size > 20 * 1024 * 1024) return err.textContent = "20MB 이하 파일만 올릴 수 있어요. 영상은 유튜브 링크로 올려 주세요.";
+  if (!$("#c1").checked || !$("#c2").checked) return err.textContent = "개인정보와 저작권 확인에 체크해 주세요.";
+  const scope = document.querySelector("input[name=sc]:checked").value;
+  try {
+    busy(true, "올리는 중… 파일이 크면 조금 걸려요");
+    const payload = { item: { t, d, g, a, ty: $("#uty").value, src: $("#usrc").value.trim(), link, scope } };
+    if (file) Object.assign(payload, { b64: await fileToB64(file), name: file.name, mime: file.type });
+    await api("upload", payload);
+    closeM(); go(scope === "회원" ? "members" : "public"); msub = "files";
+    await reloadAll(true);
+    toast(scope === "회원" ? "회원 전용 자료방에 올렸습니다" : "공개 자료실에 올렸습니다");
+  } catch (e) { err.textContent = e.message; } finally { busy(false); }
+}
+async function flip(id) {
+  const it = MD.items.find(x => x.id === id);
+  try { busy(true); await api("updateItem", { id, scope: it.m ? "공개" : "회원" }); await reloadAll(true); toast("공개 범위를 바꿨습니다"); } catch (e) { toast(e.message); } finally { busy(false); }
+}
+async function hideItem(id) {
+  try { busy(true); await api("updateItem", { id, hide: true }); await reloadAll(true); toast("목록에서 내렸습니다 (파일은 드라이브에 남아 있어요)"); } catch (e) { toast(e.message); } finally { busy(false); }
+}
+
+/* ===== 회원 전용 자료방 탭 ===== */
+function memberTabs() {
+  const T = [["files", "자료"], ["cal", "자율연수 일정"], ["notice", "공지"], ["book", "산출물 책자"]];
+  return `<div class="subtabs">${T.map(([k, n]) => `<button class="${msub === k ? "on" : ""}" onclick="msub='${k}';render()">${n}${k === "notice" && MD ? `<span class="cnt">${MD.notices.length}</span>` : ""}</button>`).join("")}</div>`;
+}
+const WD = ["일", "월", "화", "수", "목", "금", "토"];
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function calView() {
+  const y = calM.getFullYear(), mo = calM.getMonth(), start = new Date(y, mo, 1 - new Date(y, mo, 1).getDay());
+  let cells = WD.map(w => `<div class="dh">${w}</div>`).join("");
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i); if (i >= 35 && d.getMonth() !== mo) break;
+    const k = ymd(d), evs = MD.schedules.filter(s => s.d === k);
+    cells += `<div class="${d.getMonth() !== mo ? "off" : ""} ${k === TODAY ? "today" : ""}"><span class="dn">${d.getDate()}</span>${evs.map(e => `<span class="ev ${e.big ? "big" : ""}" onclick='openEv(${JSON.stringify(e.id)})'>${esc(e.tm)} ${esc(e.t)}</span>`).join("")}</div>`;
+  }
+  const up = MD.schedules.filter(s => s.d >= TODAY).sort((a, b) => a.d.localeCompare(b.d));
+  return `<div class="panel"><div class="calhead"><button class="btn mini" onclick="calM=new Date(${y},${mo - 1},1);render()" aria-label="이전 달">◀</button><h3>${y}년 ${mo + 1}월</h3><button class="btn mini" onclick="calM=new Date(${y},${mo + 1},1);render()" aria-label="다음 달">▶</button>
+   <span class="sp"></span>${isAdmin() ? `<button class="btn primary mini" onclick="openEvForm()">일정 추가</button>` : ""}</div><div class="cal">${cells}</div></div>
+   <div class="panel"><h3>다가오는 일정</h3><div class="evlist">${up.map(e => { const d = new Date(e.d); return `<div class="evrow"><div class="evdate"><b>${d.getMonth() + 1}.${d.getDate()}</b><span>${WD[d.getDay()]}요일</span></div>
+     <div class="info"><b>${esc(e.t)}</b>${e.big ? ' <span class="pin">세미나</span>' : ""}<small>${esc(e.tm)} · ${esc(e.p)}</small></div>
+     <span class="att">참석 ${e.att.length}명</span><button class="btn mini ${e.me ? "on-att" : ""}" onclick='toggleAtt(${JSON.stringify(e.id)})'>${e.me ? "참석 예정" : "참석하기"}</button></div>`; }).join("") || '<p style="color:var(--sub)">예정된 일정이 없습니다.</p>'}</div></div>`;
+}
+async function toggleAtt(id) { try { await api("attend", { id }); await loadMember(); render(); } catch (e) { toast(e.message); } }
+function openEv(id) {
+  const e = MD.schedules.find(s => s.id === id), d = new Date(e.d);
+  openM(`<h2>${esc(e.t)}</h2><dl class="meta"><dt>날짜</dt><dd>${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일 ${esc(e.tm)}</dd><dt>장소</dt><dd>${esc(e.p)}</dd><dt>참석 예정</dt><dd>${e.att.length ? e.att.map(esc).join(", ") : "아직 없음"}</dd></dl>
+  <div class="mfoot">${isAdmin() ? `<button class="btn" onclick='delEv(${JSON.stringify(id)})'>일정 삭제</button>` : ""}<button class="btn primary" onclick='closeM();toggleAtt(${JSON.stringify(id)})'>${e.me ? "참석 취소" : "참석하기"}</button></div>`);
+}
+async function delEv(id) { try { busy(true); await api("delSchedule", { id }); closeM(); await loadMember(); render(); } catch (e) { toast(e.message); } finally { busy(false); } }
+function openEvForm() {
+  openM(`<h2>자율연수 일정 추가</h2><div class="form"><label for="et">제목</label><input type="text" id="et" placeholder="예: 12월 자율연수: 표현 활동 수업 나눔">
+  <label for="ed">날짜</label><input type="date" id="ed"><label for="etm">시간</label><input type="time" id="etm" value="15:00"><label for="ep">장소</label><input type="text" id="ep" placeholder="예: 햇살초등학교 체육관">
+  <label class="check"><input type="checkbox" id="eb"> 세미나 등 큰 행사로 표시</label></div><div class="err" id="eerr"></div>
+  <div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" onclick="addEv()">추가</button></div>`);
+}
+async function addEv() {
+  const t = $("#et").value.trim(), d = $("#ed").value;
+  if (!t || !d) return $("#eerr").textContent = "제목과 날짜를 적어 주세요.";
+  try { busy(true); await api("addSchedule", { t, d, tm: $("#etm").value, p: $("#ep").value.trim() || "추후 안내", big: $("#eb").checked }); calM = new Date(+d.slice(0, 4), +d.slice(5, 7) - 1, 1); closeM(); await loadMember(); render(); toast("일정을 추가했습니다"); }
+  catch (e) { $("#eerr").textContent = e.message; } finally { busy(false); }
+}
+function noticeView() {
+  const list = MD.notices.slice().sort((a, b) => (b.pin - a.pin) || b.dt.localeCompare(a.dt));
+  return `${isAdmin() ? `<div style="text-align:right;margin-bottom:10px"><button class="btn primary" onclick="openNoticeForm()">공지 쓰기</button></div>` : ""}
+  ${list.map(n => `<div class="notice"><div class="nh">${n.pin ? '<span class="pin">고정</span>' : ""}<h3>${esc(n.t)}</h3>${isAdmin() ? `<span style="margin-left:auto"><button class="btn mini" onclick='nAct("pinNotice",${JSON.stringify(n.id)})'>${n.pin ? "고정 해제" : "고정"}</button> <button class="btn mini" onclick='nAct("delNotice",${JSON.stringify(n.id)})'>삭제</button></span>` : ""}</div>
+   <div class="nm">${esc(n.by)} · ${esc(n.dt)} · 댓글 ${n.cm.length}</div><div class="body">${esc(n.body)}</div>
+   <div class="cmts">${n.cm.map(c => `<div class="cmt"><b>${esc(c.by)}</b><span>${esc((c.dt || "").slice(5).replace("-", "."))}</span>${c.mine || isAdmin() ? ` <button class="btn mini" style="padding:0 6px;font-size:11px" onclick='nAct("delComment",${JSON.stringify(c.id)})'>삭제</button>` : ""}<div>${esc(c.x)}</div></div>`).join("")}
+   <div class="cform"><input id="c${esc(n.id)}" placeholder="댓글을 남겨 주세요" aria-label="댓글" onkeydown='if(event.key==="Enter")addC(${JSON.stringify(n.id)})'><button class="btn mini ok" onclick='addC(${JSON.stringify(n.id)})'>등록</button></div></div></div>`).join("") || '<div class="empty">아직 공지가 없습니다.</div>'}`;
+}
+async function nAct(action, id) { try { busy(true); await api(action, { id }); await loadMember(); render(); } catch (e) { toast(e.message); } finally { busy(false); } }
+async function addC(nid) { const inp = document.getElementById("c" + nid), x = inp.value.trim(); if (!x) return; try { busy(true); await api("addComment", { nid, x }); await loadMember(); render(); } catch (e) { toast(e.message); } finally { busy(false); } }
+function openNoticeForm() {
+  openM(`<h2>공지 쓰기</h2><div class="form"><label for="nt">제목</label><input type="text" id="nt"><label for="nb">내용</label><textarea id="nb" style="min-height:160px"></textarea><label class="check"><input type="checkbox" id="np"> 맨 위에 고정</label></div><div class="err" id="nerr"></div>
+  <div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" onclick="addN()">올리기</button></div>`);
+}
+async function addN() {
+  const t = $("#nt").value.trim(), body = $("#nb").value.trim();
+  if (!t || !body) return $("#nerr").textContent = "제목과 내용을 적어 주세요.";
+  try { busy(true); await api("addNotice", { t, body, pin: $("#np").checked }); closeM(); await loadMember(); render(); toast("공지를 올렸습니다"); }
+  catch (e) { $("#nerr").textContent = e.message; } finally { busy(false); }
+}
+
+/* ===== 산출물 책자 ===== */
+function bookView() {
+  const order = AREA_MAIN();
+  const src = MD.items.filter(i => !bookMine || i.own).sort((a, b) => order.indexOf(mainArea(a)) - order.indexOf(mainArea(b)) || a.dt.localeCompare(b.dt));
+  const all = MD.items, sub = all.filter(i => i.ms).length, ok = all.filter(i => i.ms && i.ms.st === "ok").length;
+  const nSel = [...bookSel].filter(id => all.some(i => i.id === id)).length;
+  return `<div class="panel"><h3>연말 산출물 책자 만들기</h3>
+   <p style="margin:0 0 10px;color:var(--sub);font-size:14px">자료마다 <b>책자 원고 PDF</b>를 올릴 수 있습니다. 책자를 만들면 표지·차례·영역 간지 뒤에 원고가 차례대로 붙어 하나의 PDF가 되고, 쪽 번호와 머리글은 책자에 맞게 새로 찍힙니다. 원고가 없는 자료는 자료 소개 쪽이 자동으로 들어갑니다.</p>
+   <div class="stats" style="margin:0 0 14px;gap:26px"><div class="stat"><b>${all.length}</b><span>전체 자료</span></div><div class="stat"><b>${sub}</b><span>원고 제출</span></div><div class="stat"><b style="color:var(--green)">${ok}</b><span>검토 완료</span></div><div class="stat"><b style="color:var(--orange)">${all.length - sub}</b><span>원고 없음</span></div></div>
+   <div class="sheetnote" style="margin:0 0 12px">원고 양식: A4 세로, 위쪽 여백 25mm 이상(머리글 자리), 아래쪽 20mm 이상(쪽 번호 자리), 쪽 번호는 넣지 않기 · 한글에서 'PDF로 저장' · 20MB 이하</div>
+   <div class="booktools"><input type="text" id="btitle" value="${esc(bookTitle)}" oninput="bookTitle=this.value" aria-label="책자 제목">
+    <label style="font-size:14px"><input type="checkbox" ${bookMine ? "checked" : ""} onchange="bookMine=this.checked;render()"> 내가 올린 자료만</label>
+    <span style="margin-left:auto"></span><button class="btn mini" onclick="selAll()">모두 선택</button><button class="btn mini" onclick="bookSel.clear();render()">선택 해제</button>
+    <button class="btn primary" onclick="makeBook()">책자 만들기 (${nSel}개)</button></div>
+   ${src.map(i => { const ms = i.ms;
+     const badge = !ms ? '<span class="status st-no">원고 없음</span>' : ms.st === "ok" ? '<span class="status st-ok">검토 완료</span>' : '<span class="status st-wait">제출됨</span>';
+     const id = JSON.stringify(i.id), b = [];
+     if (i.canEdit) b.push(`<button class="btn mini" onclick='event.preventDefault();pickMs(${id})'>${ms ? "원고 바꾸기" : "원고 올리기"}</button>`);
+     if (ms && i.canEdit) b.push(`<button class="btn mini" onclick='event.preventDefault();msAct("removeMs",${id})'>빼기</button>`);
+     if (ms && isAdmin()) b.push(`<button class="btn mini ${ms.st === "ok" ? "" : "ok"}" onclick='event.preventDefault();msAct("reviewMs",${id},${ms.st !== "ok"})'>${ms.st === "ok" ? "검토 취소" : "검토 완료"}</button>`);
+     return `<label class="bookrow"><input type="checkbox" ${bookSel.has(i.id) ? "checked" : ""} onchange='this.checked?bookSel.add(${id}):bookSel.delete(${id});render()'>
+     <div class="info"><b>${esc(i.t)}</b> ${i.m ? '<span class="memb">회원 전용</span>' : ""}<br><small>${esc(mainArea(i))} · ${esc(i.ty)} · ${esc(i.by)}${ms ? ` · 원고 ${ms.pages}쪽 (${esc((ms.dt || "").slice(5).replace("-", "."))} 제출)` : ""}</small></div>
+     ${badge}<span style="white-space:nowrap">${b.join(" ")}</span></label>`; }).join("") || '<p style="color:var(--sub)">아직 자료가 없습니다.</p>'}
+   <input type="file" id="msFile" accept="application/pdf,.pdf" style="display:none" onchange="gotMs(this)">
+  </div>`;
+}
+let msTarget = null;
+function pickMs(id) { msTarget = id; const el = $("#msFile"); el.value = ""; el.click(); }
+async function gotMs(inp) {
+  const file = inp.files[0]; if (!file) return;
+  if (!/\.pdf$/i.test(file.name)) return toast("PDF 파일만 올릴 수 있어요");
+  if (file.size > 20 * 1024 * 1024) return toast("20MB 이하로 올려 주세요");
+  try {
+    busy(true, "원고를 올리는 중…");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const pages = (await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true })).getPageCount();
+    await api("uploadMs", { id: msTarget, b64: await fileToB64(file), pages });
+    bookSel.add(msTarget); await loadMember(); render(); toast(`원고를 올렸습니다 (${pages}쪽). 운영진 검토를 기다립니다`);
+  } catch (e) { toast(e.message.includes("PDF") ? e.message : "원고를 올리지 못했어요: " + e.message); } finally { busy(false); }
+}
+async function msAct(action, id, ok) { try { busy(true); await api(action, { id, ok }); await loadMember(); render(); } catch (e) { toast(e.message); } finally { busy(false); } }
+function selAll() { MD.items.filter(i => !bookMine || i.own).forEach(i => bookSel.add(i.id)); render(); }
+
+let BOOK = null;
+function planBook() {
+  const sel = MD.items.filter(i => bookSel.has(i.id)), order = AREA_MAIN();
+  sel.sort((a, b) => order.indexOf(mainArea(a)) - order.indexOf(mainArea(b)) || (!!b.ms - !!a.ms) || a.dt.localeCompare(b.dt));
+  const groups = [...order, "기타"].map(n => ({ n, list: sel.filter(i => mainArea(i) === n) })).filter(g => g.list.length);
+  const pages = [{ k: "cover" }, { k: "toc" }];
+  groups.forEach(g => {
+    pages.push({ k: "div", g });
+    g.list.filter(i => i.ms).forEach(i => { for (let p = 0; p < i.ms.pages; p++) pages.push({ k: "ms", it: i, p, area: g.n }); });
+    const noMs = g.list.filter(i => !i.ms);
+    for (let k = 0; k < noMs.length; k += 2) pages.push({ k: "sum", list: noMs.slice(k, k + 2), area: g.n });
+  });
+  pages.forEach((p, i) => p.no = i + 1);
+  const startOf = it => pages.find(p => (p.k === "ms" && p.it === it && p.p === 0) || (p.k === "sum" && p.list.includes(it))).no;
+  const divOf = g => pages.find(p => p.k === "div" && p.g === g).no;
+  return { sel, groups, pages, startOf, divOf };
+}
+function pageHTML(P, B) {
+  const pno = `<div class="pno">${P.no}</div>`;
+  if (P.k === "cover") return `<div class="page bcover"><div class="yr">연구회 산출물</div><h1>${esc(bookTitle)}</h1><div style="font-size:12pt;opacity:.85">자료 ${B.sel.length}편 · ${B.groups.map(g => `${esc(g.n)} ${g.list.length}`).join(" · ")}</div><div class="org"><span style="display:inline-block;vertical-align:middle;margin-right:4mm;background:#fff;border-radius:3mm;padding:1.5mm;line-height:0">${symSvg(48)}</span>전북초등체육교과연구회</div></div>`;
+  if (P.k === "toc") {
+    const teachers = [...new Set(B.sel.map(i => i.by))];
+    const pm = MD.members.filter(m => m.book && !teachers.includes(m.n));
+    return `<div class="page"><h2>차례</h2>${B.groups.map(g => `<div class="toc-sec"><div class="toc"><span>${esc(g.n)}</span><span class="dots"></span><span>${B.divOf(g)}</span></div></div>${g.list.map(i => `<div class="toc" style="padding-left:5mm"><span>${esc(i.t)} <span style="color:#888;font-size:9pt">${esc(i.by)}</span></span><span class="dots"></span><span>${B.startOf(i)}</span></div>`).join("")}`).join("")}
+     <div style="margin-top:10mm;font-size:10pt;color:#444"><b>자료를 만든 선생님</b><br>${teachers.map(esc).join(", ")}</div>
+     ${pm.length ? `<div style="margin-top:5mm;font-size:10pt;color:#444"><b>함께한 참여 회원</b><br>${pm.map(m => `${esc(m.n)}(${esc(m.sc)})`).join(", ")}</div>` : ""}${pno}</div>`;
+  }
+  if (P.k === "div") return `<div class="page bdiv"><div class="dnum">${String(B.groups.indexOf(P.g) + 1).padStart(2, "0")}</div><div class="dname">${esc(P.g.n)}</div><div class="dlist">${P.g.list.map(i => `<div>${esc(i.t)} · ${esc(i.by)}</div>`).join("")}</div>${pno}</div>`;
+  if (P.k === "sum") return `<div class="page"><div class="bhead">${esc(bookTitle)} · ${esc(P.area)}</div>${P.list.map(i => `<div class="bitem"><div class="bsec">${esc(i.a.join(" · "))}</div><h3>${esc(i.t)}</h3>
+    <table><tr><th>대상 학년</th><td>${esc(i.g.join(", "))}</td><th>자료 종류</th><td>${esc(i.ty)}</td></tr><tr><th>만든 선생님</th><td colspan="3">${esc(i.by)} (${esc(i.sc)})</td></tr></table>
+    <div style="white-space:pre-line">${esc(i.d)}</div><div class="link">자료 위치: 전북초등체육교과연구회 자료실 ${i.m ? "회원 전용 자료방" : "공개 자료실"} · ${esc(i.dt)} 등록</div></div>`).join("")}${pno}</div>`;
+  if (P.k === "ms") return `<div class="page msph"><div class="bhead">${esc(bookTitle)} · ${esc(P.area)}</div><div class="mscard"><div class="msico">PDF</div><b>${esc(P.it.t)}</b><span>${esc(P.it.by)} 선생님 원고 · ${P.p + 1} / ${P.it.ms.pages}쪽</span><small>합친 PDF에는 이 자리에 원고 원본 쪽이 그대로 들어갑니다</small></div>${pno}</div>`;
+}
+function makeBook() {
+  BOOK = planBook();
+  if (!BOOK.sel.length) return toast("책자에 넣을 자료를 하나 이상 골라 주세요");
+  const notOk = BOOK.sel.filter(i => i.ms && i.ms.st !== "ok").length;
+  const html = BOOK.pages.filter(p => !(p.k === "ms" && p.p > 0)).map(p => pageHTML(p, BOOK)).join("");
+  let bv = $("#bookView"); if (!bv) { bv = document.createElement("div"); bv.id = "bookView"; document.body.appendChild(bv); }
+  bv.innerHTML = `<div class="bbar"><span>${esc(bookTitle)} · 표지 포함 ${BOOK.pages.length}쪽${notOk ? ` · <b style="color:#ffcf8f">검토 전 원고 ${notOk}편 포함</b>` : ""}</span><button class="btn mini primary" id="mkPdf" onclick="buildPdf()">합친 PDF 받기</button><button class="btn mini" onclick="document.getElementById('bookView').classList.remove('show')">닫기</button></div>
+   <div class="bnote">미리보기에서 원고는 첫 쪽 자리만 보여 줍니다. '합친 PDF 받기'를 누르면 원고 원본 쪽이 모두 들어간 한 권의 PDF가 만들어집니다.</div>${html}`;
+  bv.classList.add("show"); bv.scrollTop = 0;
+}
+function textPng(txt, px, color) {
+  const c = document.createElement("canvas"), s = 4, ctx = c.getContext("2d");
+  ctx.font = `500 ${px * s}px "Noto Sans KR",sans-serif`; const w = Math.ceil(ctx.measureText(txt).width) + 8;
+  c.width = w; c.height = Math.ceil(px * s * 1.5); ctx.font = `500 ${px * s}px "Noto Sans KR",sans-serif`; ctx.fillStyle = color; ctx.textBaseline = "middle"; ctx.fillText(txt, 4, c.height / 2);
+  return { url: c.toDataURL("image/png"), w: w / s, h: c.height / s };
+}
+async function buildPdf() {
+  const btn = $("#mkPdf"); btn.disabled = true;
+  try {
+    const { PDFDocument, rgb } = PDFLib, out = await PDFDocument.create(), A4 = [595.28, 841.89];
+    const stage = document.createElement("div"); stage.style.cssText = "position:fixed;left:-10000px;top:0;"; document.body.appendChild(stage);
+    const loaded = new Map();
+    for (const P of BOOK.pages) {
+      btn.textContent = `만드는 중 ${P.no}/${BOOK.pages.length}`;
+      if (P.k === "ms") {
+        let src = loaded.get(P.it.id);
+        if (!src) { const r = await api("getFile", { id: P.it.id, kind: "ms" }); src = await PDFDocument.load(b64ToBytes(r.b64), { ignoreEncryption: true }); loaded.set(P.it.id, src); }
+        if (P.p >= src.getPageCount()) continue;
+        const [emb] = await out.embedPdf(src, [P.p]); const pg = out.addPage(A4);
+        const sc = Math.min(A4[0] / emb.width, A4[1] / emb.height);
+        pg.drawPage(emb, { x: (A4[0] - emb.width * sc) / 2, y: (A4[1] - emb.height * sc) / 2, xScale: sc, yScale: sc });
+        const hd = textPng(`${bookTitle} · ${P.area}`, 7.5, "#8a8f98"), hi = await out.embedPng(hd.url);
+        pg.drawImage(hi, { x: (A4[0] - hd.w) / 2, y: A4[1] - 30, width: hd.w, height: hd.h });
+        pg.drawLine({ start: { x: 56, y: A4[1] - 34 }, end: { x: A4[0] - 56, y: A4[1] - 34 }, thickness: .4, color: rgb(.8, .82, .86) });
+        const nm = textPng(String(P.no), 9, "#777777"), ni = await out.embedPng(nm.url);
+        pg.drawImage(ni, { x: (A4[0] - nm.w) / 2, y: 22, width: nm.w, height: nm.h });
+      } else {
+        stage.innerHTML = pageHTML(P, BOOK); const el = stage.firstElementChild; el.style.margin = "0"; el.style.boxShadow = "none";
+        const cv = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", logging: false });
+        out.addPage(A4).drawImage(await out.embedJpg(cv.toDataURL("image/jpeg", .9)), { x: 0, y: 0, width: A4[0], height: A4[1] });
+      }
+    }
+    stage.remove(); out.setTitle(bookTitle); out.setAuthor("전북초등체육교과연구회");
+    saveBlob(await out.save(), `${bookTitle}.pdf`);
+    toast(`책자 PDF를 내려받았습니다 (${BOOK.pages.length}쪽)`);
+  } catch (e) { console.error(e); toast("PDF를 만드는 중 문제가 생겼어요: " + (e.message || e)); }
+  finally { btn.disabled = false; btn.textContent = "합친 PDF 받기"; }
+}
+
+/* ===== 운영진 관리 ===== */
+function adminView() {
+  const w = AD.members.filter(j => j.s === "대기").length, regN = AD.members.filter(j => j.s === "승인" && j.reg).length;
+  const st = s => s === "승인" ? "st-ok" : s === "대기" ? "st-wait" : "st-no";
+  return `<div class="panel"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><h3 style="margin:0">회원 (승인 대기 ${w}명)</h3><span style="margin-left:auto;font-size:13px;color:var(--sub)">도 등록 명단 동의 ${regN}명</span><button class="btn mini ok" onclick="copyRoster()">도 등록 명단 복사</button></div>
+   <div style="overflow-x:auto"><table><tr><th>이름</th><th>소속</th><th>구글 계정</th><th>신청일</th><th>도 명단</th><th>책자 이름</th><th>역할</th><th>상태</th><th></th></tr>
+   ${AD.members.map(j => { const em = JSON.stringify(j.email); return `<tr><td>${esc(j.n)}</td><td>${esc(j.sc)}</td><td>${esc(j.email)}</td><td>${esc(j.dt)}</td><td>${j.reg ? "동의" : "-"}</td><td>${j.book ? "동의" : "-"}</td><td>${esc(j.role)}</td><td><span class="status ${st(j.s)}">${esc(j.s)}</span></td>
+    <td style="text-align:right;white-space:nowrap">${j.s !== "승인" ? `<button class="btn mini ok" onclick='judge(${em},"승인")'>승인</button> ` : ""}${j.s === "대기" ? `<button class="btn mini" onclick='judge(${em},"보류")'>보류</button>` : ""}${j.s === "승인" ? `<button class="btn mini" onclick='judge(${em},"승인","${j.role === "운영진" ? "회원" : "운영진"}")'>${j.role === "운영진" ? "운영진 해제" : "운영진으로"}</button> <button class="btn mini" onclick='judge(${em},"보류")'>해제</button>` : ""}</td></tr>`; }).join("")}</table></div>
+   <div class="sheetnote">승인하면 회원 전용 드라이브 폴더 보기 권한이 자동으로 주어지고, 해제하면 회수됩니다. 전체 기록은 <a href="${esc(AD.sheetUrl)}" target="_blank" rel="noopener">관리 시트</a>에서 볼 수 있어요.</div></div>
+   <div class="panel"><h3>내려받기 기록 (최근 30건)</h3>${AD.log.length ? `<table><tr><th>일시</th><th>선생님</th><th>자료</th></tr>${AD.log.map(l => `<tr><td>${esc(l.at)}</td><td>${esc(l.n)}</td><td>${esc(l.t)}</td></tr>`).join("")}</table>` : '<p style="color:var(--sub)">아직 기록이 없습니다.</p>'}</div>
+   <div class="panel"><h3>자료 관리</h3><p style="margin:0;font-size:14px;color:var(--sub)">운영진은 모든 자료의 공개 범위를 바꾸거나 목록에서 내릴 수 있어요. 분류 목록(학년·영역·자료 종류)과 책자 제목은 관리 시트 "설정" 탭에서 고칩니다.</p>
+   <div style="overflow-x:auto;margin-top:10px"><table><tr><th>자료</th><th>올린 선생님</th><th>공개 범위</th><th></th></tr>${(MD ? MD.items : []).slice().sort((a, b) => b.dt.localeCompare(a.dt)).map(i => `<tr><td>${esc(i.t)}</td><td>${esc(i.by)}</td><td>${i.m ? '<span class="status st-wait">회원 전용</span>' : '<span class="status st-ok">공개</span>'}</td><td style="text-align:right;white-space:nowrap"><button class="btn mini" onclick='flip(${JSON.stringify(i.id)})'>${i.m ? "공개로 전환" : "회원 전용으로"}</button> <button class="btn mini" onclick='hideItem(${JSON.stringify(i.id)})'>내리기</button></td></tr>`).join("")}</table></div></div>`;
+}
+async function judge(email, status, role) {
+  try { busy(true); AD = await api("judge", { email, status, role }); await loadMember(); render(); toast(status === "승인" ? "처리했습니다. 회원 전용 폴더 권한이 맞춰졌어요" : "처리했습니다"); }
+  catch (e) { toast(e.message); } finally { busy(false); }
+}
+function copyRoster() {
+  const t = ["연번\t이름\t소속"].concat(AD.members.filter(j => j.s === "승인" && j.reg).map((j, k) => `${k + 1}\t${j.n}\t${j.sc}`)).join("\n");
+  copyText(t, "승인·동의한 회원 명단을 복사했습니다. 한글이나 엑셀 표에 붙여 넣으세요");
+}
+
+/* ===== 시작 ===== */
+function route() {
+  const h = location.hash.replace("#", "");
+  view = ["public", "members", "mine", "admin"].includes(h) ? h : "public";
+  render();
+}
+window.addEventListener("hashchange", route);
+$("#logoBox").innerHTML = symSvg(38);
+$("#footLogo").innerHTML = symSvg(22);
+if (!apiReady()) { const b = $("#setupBar"); b.style.display = "block"; b.textContent = "설치 중: 서버 주소(API_URL)가 아직 연결되지 않았습니다. 설치를 마치면 이 줄이 사라집니다."; }
+loadPublic(false).then(route);
+
+</script>
+</body>
+</html>
