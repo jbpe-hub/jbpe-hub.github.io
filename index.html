@@ -264,6 +264,9 @@ footer .flogo{display:inline-block;vertical-align:middle;margin-right:6px;line-h
 .mdel{border:0;background:none;color:var(--sub);font-size:11px;padding:0;text-decoration:underline}
 .bubble{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 12px;font-size:14.5px;white-space:pre-wrap;word-break:break-word;text-align:left;margin-top:2px}
 .msg.mine .bubble{background:var(--navy);border-color:var(--navy);color:#fff}
+.chat-typing{min-height:22px;padding:2px 14px 0;font-size:12.5px;color:var(--sub);display:flex;align-items:center;gap:6px}
+.tdots{display:inline-flex;gap:3px}.tdots i{width:5px;height:5px;border-radius:50%;background:var(--sub);animation:tdot 1.2s infinite}.tdots i:nth-child(2){animation-delay:.2s}.tdots i:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 .chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
 .chat-input textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:none;font-family:inherit;font-size:14px;min-height:44px;max-height:120px}
 .chat-note{font-size:11.5px;color:var(--sub);padding:0 14px 10px}
@@ -929,11 +932,14 @@ function chatStart() {
   rRef.on("child_added", s => { CHAT.room.push({ id: s.key, ...s.val() }); if (CHAT.active === "room") chatAppend(); });
   rRef.on("child_removed", s => { CHAT.room = CHAT.room.filter(m => m.id !== s.key); if (CHAT.active === "room") chatAppend(); });
   CHAT.refs.push(rRef);
+  const oRef = db.ref(".info/serverTimeOffset"); oRef.on("value", s => { TYP.off = s.val() || 0; }); CHAT.refs.push(oRef);
+  typWatch();
   meetStart();
 }
 function chatStop() {
   if (!CHAT.on) return;
   try { CHAT.db.ref("status/" + CHAT.uid).update({ state: "off", t: firebase.database.ServerValue.TIMESTAMP }); } catch (e) {}
+  typStop(); if (TYP.ref) { TYP.ref.off(); TYP.ref = null; TYP.key = ""; }
   CHAT.refs.forEach(r => r.off()); if (CHAT.dmRef) CHAT.dmRef.off();
   MEET.started = false; MEET.cfg = null; MEET.inRoom = {}; MEET.ev = {};
   Object.assign(CHAT, { on: false, refs: [], dmRef: null, members: {}, status: {}, inbox: {}, room: [], dm: {}, active: "room", err: "" });
@@ -953,16 +959,53 @@ function openDm(uid) {
   CHAT.dmRef = CHAT.db.ref("dm/" + cid).orderByChild("t").limitToLast(200);
   CHAT.dmRef.on("child_added", s => { (CHAT.dm[cid] = CHAT.dm[cid] || []).push({ id: s.key, ...s.val() }); if (CHAT.active === uid) chatAppend(); });
   if (CHAT.inbox[uid] && CHAT.inbox[uid].unread) CHAT.db.ref(`inbox/${CHAT.uid}/${uid}/unread`).set(false);
+  typWatch();
   msub = "chat"; msubPicked = true; go("members"); render();
 }
-function openRoom() { CHAT.active = "room"; if (CHAT.dmRef) { CHAT.dmRef.off(); CHAT.dmRef = null; } render(); }
+function openRoom() { CHAT.active = "room"; if (CHAT.dmRef) { CHAT.dmRef.off(); CHAT.dmRef = null; } typWatch(); render(); }
+
+/* 입력 중 표시 */
+const TYP = { key: "", ref: null, data: {}, off: 0, last: 0, idle: null, mine: "", tick: null };
+const typKeyOf = () => CHAT.active === "room" ? "room" : cidOf(CHAT.active);
+function typWatch() {
+  if (!CHAT.db) return;
+  const k = typKeyOf(); if (k === TYP.key) return;
+  typStop(); if (TYP.ref) TYP.ref.off();
+  TYP.key = k; TYP.data = {}; typPaint();
+  TYP.ref = CHAT.db.ref("typing/" + k);
+  TYP.ref.on("value", s => { TYP.data = s.val() || {}; typPaint(); }, () => {});
+}
+function typPing() {
+  if (!CHAT.db || !$("#chatIn")) return;
+  const inp = $("#chatIn"); if (!inp.value.trim()) return typStop();
+  const now = Date.now();
+  clearTimeout(TYP.idle); TYP.idle = setTimeout(typStop, 4000);
+  if (now - TYP.last < 2500 && TYP.mine === TYP.key) return;
+  TYP.last = now;
+  const ref = CHAT.db.ref(`typing/${TYP.key}/${CHAT.uid}`);
+  if (TYP.mine !== TYP.key) { if (TYP.mine) CHAT.db.ref(`typing/${TYP.mine}/${CHAT.uid}`).remove().catch(() => {}); ref.onDisconnect().remove().catch(() => {}); }
+  TYP.mine = TYP.key;
+  ref.set({ n: ME.name || ME.email, t: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
+}
+function typStop() {
+  clearTimeout(TYP.idle); TYP.last = 0;
+  if (TYP.mine && CHAT.db) CHAT.db.ref(`typing/${TYP.mine}/${CHAT.uid}`).remove().catch(() => {});
+  TYP.mine = "";
+}
+function typPaint() {
+  const el = $("#chatTyping"); clearTimeout(TYP.tick);
+  const now = Date.now() + TYP.off;
+  const who = Object.entries(TYP.data).filter(([u, v]) => u !== CHAT.uid && v && now - (v.t || 0) < 7000).map(([u, v]) => v.n || "회원");
+  if (el) el.innerHTML = who.length ? `<span class="tdots"><i></i><i></i><i></i></span>${esc(who.length > 2 ? `${who.slice(0, 2).join(", ")} 선생님 외 ${who.length - 2}명이` : who.join(", ") + " 선생님이")} 입력하고 있어요` : "";
+  if (who.length) TYP.tick = setTimeout(typPaint, 2000);
+}
 
 async function chatSend() {
   const inp = $("#chatIn"); if (!inp) return;
   const x = inp.value.trim(); if (!x) return;
   if (x.length > 1000) return toast("1000자까지 보낼 수 있어요");
   const T = firebase.database.ServerValue.TIMESTAMP, msg = { uid: CHAT.uid, n: ME.name || ME.email, x, t: T };
-  inp.value = ""; inp.focus();
+  inp.value = ""; inp.focus(); typStop();
   try {
     if (CHAT.active === "room") await CHAT.db.ref("room").push(msg);
     else {
@@ -1019,11 +1062,12 @@ function chatView() {
   if (CHAT.err) return `<div class="empty">${esc(CHAT.err)}</div>`;
   const title = CHAT.active === "room" ? "전체 대화방" : `${esc((CHAT.members[CHAT.active] || {}).n || "회원")} 선생님과 쪽지`;
   const sub = CHAT.active === "room" ? "회원 모두가 보는 대화방이에요. 서로 존중하는 말로 이야기해 주세요." : ((CHAT.status[CHAT.active] || {}).state === "on" ? "지금 접속 중이에요. 바로 주고받을 수 있어요." : "지금은 접속해 있지 않아요. 남긴 쪽지는 다음에 접속하면 볼 수 있어요.");
-  setTimeout(chatAppend, 0);
+  setTimeout(() => { chatAppend(); typPaint(); }, 0);
   return `<div class="chat"><aside class="chat-side" id="chatSide">${chatSideHTML()}</aside>
    <section class="chat-main"><div class="chat-head"><b>${title}</b><small>${sub}</small></div>
    <div class="chat-box" id="chatBox" aria-live="polite"></div>
-   <div class="chat-input"><textarea id="chatIn" rows="1" placeholder="메시지를 입력하세요 (Enter 보내기, Shift+Enter 줄바꿈)" aria-label="메시지" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();chatSend()}"></textarea><button class="btn primary" onclick="chatSend()">보내기</button></div>
+   <div class="chat-typing" id="chatTyping" aria-live="polite"></div>
+   <div class="chat-input"><textarea id="chatIn" rows="1" oninput="typPing()" placeholder="메시지를 입력하세요 (Enter 보내기, Shift+Enter 줄바꿈)" aria-label="메시지" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();chatSend()}"></textarea><button class="btn primary" onclick="chatSend()">보내기</button></div>
    <div class="chat-note">대화 내용은 연구회 공용 계정의 파이어베이스에 저장되며, 운영진이 관리를 위해 볼 수 있습니다.</div></section></div>`;
 }
 
