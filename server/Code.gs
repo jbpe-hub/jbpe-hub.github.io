@@ -13,7 +13,7 @@ var MAX_UPLOAD_MB = 20;
 
 var SHEETS = {
   '자료': ['id','제목','설명','학년','영역','종류','공개범위','파일ID','파일이름','링크','참고자료','올린이메일','올린이','소속','등록일','조회','상태','원고파일ID','원고쪽수','원고상태','원고제출일'],
-  '회원': ['이메일','이름','소속','신청일','상태','역할','책자이름동의','도명단동의','처리일'],
+  '회원': ['이메일','이름','소속','신청일','상태','역할','책자이름동의','도명단동의','처리일','전화번호'],
   '일정': ['id','날짜','시간','제목','장소','큰행사','참석'],
   '공지': ['id','제목','내용','작성자','작성일','고정'],
   '댓글': ['id','공지id','작성자이메일','작성자','내용','작성일'],
@@ -94,6 +94,18 @@ function update_(name, rowObj, patch) {
 function deleteRow_(name, rowObj) { sh_(name).deleteRow(rowObj._row); }
 function find_(name, key, val) { return rows_(name).filter(function (r) { return r[key] === String(val); })[0]; }
 
+/** 예전에 만든 시트에 새 칸(예: 전화번호)이 없으면 머리줄에 붙여 줍니다. */
+function ensureHeaders_(name) {
+  var sh = sh_(name), head = SHEETS[name];
+  var cur = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0];
+  head.forEach(function (h, i) { if (cur[i] !== h) sh.getRange(1, i + 1).setValue(h).setFontWeight('bold').setBackground('#E8EEF7'); });
+}
+function phone_(v) {
+  var d = String(v || '').replace(/[^0-9]/g, '');
+  if (!/^01[016789]\d{7,8}$/.test(d)) throw new Error('휴대전화 번호를 확인해 주세요. (예: 010-1234-5678)');
+  return d.length === 11 ? d.slice(0, 3) + '-' + d.slice(3, 7) + '-' + d.slice(7) : d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6);
+}
+
 function settings_() {
   var o = {};
   rows_('설정').forEach(function (r) { o[r['항목']] = r['값']; });
@@ -137,6 +149,7 @@ function who_(email) {
     status: m ? m['상태'] : '없음',
     admin: !!(m && m['상태'] === '승인' && m['역할'] === '운영진'),
     member: !!(m && m['상태'] === '승인'),
+    hasPhone: !!(m && m['전화번호']),
     row: m
   };
 }
@@ -160,11 +173,12 @@ function doPost(e) {
     var email = verify_(req.token);
     var u = who_(email);
     var a = req.action, r;
-    var writes = ['join','upload','updateItem','uploadMs','removeMs','reviewMs','addSchedule','delSchedule','attend','addNotice','delNotice','pinNotice','addComment','delComment','judge','view'];
+    var writes = ['join','updateMe','upload','updateItem','uploadMs','removeMs','reviewMs','addSchedule','delSchedule','attend','addNotice','delNotice','pinNotice','addComment','delComment','judge','view'];
     if (writes.indexOf(a) >= 0) lock.waitLock(20000);
     switch (a) {
       case 'me': r = { me: meInfo_(u) }; break;
       case 'join': r = join_(u, req); break;
+      case 'updateMe': r = updateMe_(u, req); break;
       case 'memberData': needMember_(u); r = memberData_(u); break;
       case 'view': r = view_(req.id); break;
       case 'getFile': r = getFile_(u, req); break;
@@ -255,21 +269,33 @@ function view_(id) {
 
 /* ───────────── 회원 ───────────── */
 
-function meInfo_(u) { return { email: u.email, name: u.name, school: u.school, status: u.status, admin: u.admin, member: u.member }; }
+function meInfo_(u) { return { email: u.email, name: u.name, school: u.school, status: u.status, admin: u.admin, member: u.member, hasPhone: u.hasPhone }; }
 
 function join_(u, req) {
   if (u.row && u.status !== '보류') throw new Error('이미 가입 신청을 했습니다. (상태: ' + u.status + ')');
   var name = String(req.name || '').trim(), school = String(req.school || '').trim();
   if (!name || !school) throw new Error('이름과 소속을 적어 주세요.');
+  ensureHeaders_('회원');
+  var phone = phone_(req.phone);
   var data = { '이메일': u.email, '이름': name, '소속': school, '신청일': today_(), '상태': '대기', '역할': '회원',
-    '책자이름동의': req.book ? 'Y' : 'N', '도명단동의': req.reg ? 'Y' : 'N', '처리일': '' };
+    '책자이름동의': req.book ? 'Y' : 'N', '도명단동의': req.reg ? 'Y' : 'N', '처리일': '', '전화번호': phone };
   if (u.row) update_('회원', u.row, data); else append_('회원', data);
   return { me: meInfo_(who_(u.email)) };
 }
 
+function updateMe_(u, req) {
+  if (!u.row) throw new Error('먼저 가입 신청을 해 주세요.');
+  ensureHeaders_('회원');
+  var patch = { '전화번호': phone_(req.phone) };
+  if (req.reg != null) patch['도명단동의'] = req.reg ? 'Y' : 'N';
+  update_('회원', u.row, patch);
+  return { me: meInfo_(who_(u.email)) };
+}
+
 function adminData_() {
+  ensureHeaders_('회원');
   var members = rows_('회원').map(function (m) {
-    return { email: m['이메일'], n: m['이름'], sc: m['소속'], dt: m['신청일'], s: m['상태'], role: m['역할'], book: m['책자이름동의'] === 'Y', reg: m['도명단동의'] === 'Y' };
+    return { email: m['이메일'], n: m['이름'], sc: m['소속'], dt: m['신청일'], s: m['상태'], role: m['역할'], book: m['책자이름동의'] === 'Y', reg: m['도명단동의'] === 'Y', phone: m['전화번호'] || '' };
   });
   var log = rows_('내려받기').slice(-30).reverse().map(function (l) { return { at: l['일시'], n: l['이름'], t: l['자료제목'] }; });
   return { members: members, log: log, sheetUrl: ss_().getUrl() };
