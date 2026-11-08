@@ -331,7 +331,11 @@ aside h4{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#98a2b3;
 aside h4+.chips,aside h4+.area-group{margin-bottom:4px}
 aside h4:not(:first-of-type){border-top:1px solid #f1f3f6;padding-top:14px}
 .chip{border-radius:9px;transition:background .15s,border-color .15s}
-.chip:hover{border-color:#b9c4d6}
+.chip{transition:background .15s,border-color .15s,box-shadow .15s,transform .15s,color .15s}
+.chip:not(.on):hover{border-color:var(--navy);color:var(--navy);background:#fff;box-shadow:0 4px 12px rgba(23,50,92,.16);transform:translateY(-1px)}
+.chip.main:not(.on):hover{border-color:var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 16%,white);box-shadow:0 4px 12px color-mix(in srgb,var(--c) 28%,transparent)}
+.chip.on:hover{box-shadow:0 4px 12px rgba(23,50,92,.25);transform:translateY(-1px)}
+.freset:hover{color:var(--navy)}
 .chip.on::before{content:"✓ ";font-weight:700}
 .toolbar{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;align-items:center;box-shadow:0 1px 2px rgba(16,24,40,.04)}
 .sbox{flex:1;min-width:200px;position:relative;display:flex;align-items:center}
