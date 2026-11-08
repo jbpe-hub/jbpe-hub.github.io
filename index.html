@@ -150,6 +150,7 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
 .inapp h2{margin:0 0 8px;font-size:19px}.inapp p{margin:0 0 12px;font-size:14px;color:var(--sub);line-height:1.6}
 .inapp .steps{text-align:left;background:#f6f7f9;border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:14px;line-height:1.7}
 .inapp .btns{display:flex;flex-direction:column;gap:8px}
+.msguide{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#f4f8f5;border:1px solid #cfe6d8;border-radius:12px;padding:12px 14px;margin:0 0 10px}.msguide>div{flex:1;min-width:240px;font-size:13.5px;color:var(--sub)}.msguide b{display:block;color:var(--text);font-size:14px}.msguide .btn{text-decoration:none;white-space:nowrap}
 .lrow{display:flex;gap:6px;margin-top:6px}.lrow .ll{flex:0 0 38%}.lrow .lu{flex:1;min-width:0}.lrow .btn{flex:0 0 auto}
 @media(max-width:520px){.lrow{flex-wrap:wrap}.lrow .ll{flex:1 1 100%}}
 .curf{background:#f6f7f9;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:var(--text)}
@@ -927,7 +928,10 @@ function bookView() {
   return `<div class="panel"><h3>연말 산출물 책자 만들기</h3>
    <p style="margin:0 0 10px;color:var(--sub);font-size:14px">자료마다 <b>책자 원고 PDF</b>를 올릴 수 있습니다. 책자를 만들면 표지·차례·영역 간지 뒤에 원고가 차례대로 붙어 하나의 PDF가 되고, 쪽 번호와 머리글은 책자에 맞게 새로 찍힙니다. 원고가 없는 자료는 자료 소개 쪽이 자동으로 들어갑니다.</p>
    <div class="stats" style="margin:0 0 14px;gap:26px"><div class="stat"><b>${all.length}</b><span>전체 자료</span></div><div class="stat"><b>${sub}</b><span>원고 제출</span></div><div class="stat"><b style="color:var(--green)">${ok}</b><span>검토 완료</span></div><div class="stat"><b style="color:var(--orange)">${all.length - sub}</b><span>원고 없음</span></div></div>
-   <div class="sheetnote" style="margin:0 0 12px">원고 양식: A4 세로, 위쪽 여백 25mm 이상(머리글 자리), 아래쪽 20mm 이상(쪽 번호 자리), 쪽 번호는 넣지 않기 · 한글에서 'PDF로 저장' · 20MB 이하</div>
+   <div class="msguide"><div><b>원고 쓰는 법</b><span>양식(한글)을 받아 채운 뒤 PDF로 저장해, 아래 자료 목록에서 [원고 올리기]로 올려 주세요. 분량은 A4 2~4쪽이 알맞아요.</span></div>
+    <a class="btn primary" href="files/ms-template.hwpx" download="원고양식_전북초등체육교과연구회.hwpx">원고 양식 받기 (한글)</a>
+    <a class="btn" href="files/ms-example.pdf" target="_blank" rel="noopener">예시 원고 보기 (PDF)</a></div>
+   <div class="sheetnote" style="margin:0 0 12px">양식을 쓰지 않을 때: A4 세로, 위쪽 여백 25mm 이상(머리글 자리), 아래쪽 20mm 이상(쪽 번호 자리), 쪽 번호는 넣지 않기 · 한글에서 'PDF로 저장' · 20MB 이하</div>
    <div class="booktools"><input type="text" id="btitle" value="${esc(bookTitle)}" oninput="bookTitle=this.value" aria-label="책자 제목">
     <label style="font-size:14px"><input type="checkbox" ${bookMine ? "checked" : ""} onchange="bookMine=this.checked;render()"> 내가 올린 자료만</label>
     <span style="margin-left:auto"></span><button class="btn mini" onclick="selAll()">모두 선택</button><button class="btn mini" onclick="bookSel.clear();render()">선택 해제</button>
@@ -1317,7 +1321,7 @@ function guideView() {
       <li><b>화상 회의</b>: 연구회 회의실(구글 미트)에 바로 들어갈 수 있어요. 지금 몇 명이 회의 중인지도 보여요. 3명 이상 회의는 60분이 지나면 끊기니, 같은 링크로 다시 들어오면 돼요.</li>
       <li><b>자율연수 일정</b>: 달력에서 일정을 눌러 <b>참석하기</b>를 누르면 참석 명단에 들어가요. 화상 회의가 연결된 일정은 거기서 바로 들어갈 수 있어요.</li>
       <li><b>공지</b>: 운영진 공지를 보고 댓글을 달 수 있어요.</li>
-      <li><b>산출물 책자</b>: 연말에 내 자료를 골라 책자에 넣고, 원고 PDF를 올리면 한 권으로 묶여요.</li></ul>`],
+      <li><b>산출물 책자</b>: 연말에 내 자료를 골라 책자에 넣고, 원고 PDF를 올리면 한 권으로 묶여요. 책자 탭에서 <b>원고 양식(한글)</b>과 <b>예시 원고</b>를 받을 수 있어요.</li></ul>`],
     ["g5", "휴대폰에서 쓰기", `<ul>
       <li>한 번 로그인하면 같은 기기에서는 로그인이 유지돼요. 공용 기기에서는 다 쓰신 뒤 <b>로그아웃</b>해 주세요.</li>
       <li>휴대폰 브라우저 메뉴의 <b>홈 화면에 추가</b>를 누르면 앱처럼 바로 열 수 있어요.</li>
