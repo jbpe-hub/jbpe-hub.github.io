@@ -328,12 +328,10 @@ aside h4:not(:first-of-type){border-top:1px solid #f1f3f6;padding-top:14px}
 .card:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(23,50,92,.12);border-color:#c7d3e6}
 .card:hover h3{color:var(--blue)}
 .card h3{transition:color .15s;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card.aicard{border-color:#bfe0cc}
-.card.aicard::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,#3fae6f,#2a9d8f)}
-.card.aicard:hover h3{color:var(--green)}
+.card.banded::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--band)}
+.tag.tmain{color:var(--c);background:color-mix(in srgb,var(--c) 9%,white);border:1px solid color-mix(in srgb,var(--c) 30%,white);font-weight:700}
 .ctop{gap:5px}.csp{flex:1}
 .type{display:inline-flex;align-items:center;gap:4px;border:1px solid #d9e4f5;padding:2px 9px}
-.aicard .type{background:#eaf6ef;color:var(--green);border-color:#c9e7d5}
 .memb{display:inline-flex;align-items:center;gap:3px;border:1px solid #f3dcc0}
 .free{font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 7px;background:#eaf6ef;color:var(--green);border:1px solid #cfe9da}
 .new{background:#e5484d;color:#fff;border-radius:5px;padding:1px 6px;font-size:10.5px;letter-spacing:.3px}
@@ -459,6 +457,13 @@ const AREA_MAIN = () => CFG.areas.map(A => A.n);
 const isAiTag = a => { const ai = CFG.areas.find(A => A.n.startsWith("AI")); return a.startsWith("AI") || (ai && ai.s.includes(a)); };
 const AREA_COLORS = ["#2F8A57", "#2B5797", "#C25E12", "#7A4FB5", "#0F7C86", "#9A3D5C"];
 const areaStyle = n => { const i = AREA_MAIN().indexOf(n); return i < 0 ? "" : `style="--c:${AREA_COLORS[i % AREA_COLORS.length]}"`; };
+const areaColor = n => { const i = AREA_MAIN().indexOf(n); return i < 0 ? "" : AREA_COLORS[i % AREA_COLORS.length]; };
+const mainsOf = it => CFG.areas.filter(A => it.a.includes(A.n) || A.s.some(x => it.a.includes(x))).map(A => A.n);
+function bandOf(it) {
+  const cs = mainsOf(it).map(areaColor).filter(Boolean); if (!cs.length) return "";
+  if (cs.length === 1) return cs[0];
+  const w = 100 / cs.length; return `linear-gradient(90deg,${cs.map((c, i) => `${c} ${(i * w).toFixed(2)}% ${((i + 1) * w).toFixed(2)}%`).join(",")})`;
+}
 const mainArea = it => AREA_MAIN().find(n => it.a.includes(n)) || "기타";
 
 /* ===== 머리 · 메뉴 ===== */
@@ -506,11 +511,11 @@ function filters() {
 }
 function card(it) {
   const isNew = (new Date(TODAY) - new Date(it.dt)) / 864e5 < 7;
-  const isAi = it.a.some(isAiTag);
-  return `<div class="card${isAi ? " aicard" : ""}" onclick='openItem(${JSON.stringify(it.id)})'>
+  const band = bandOf(it);
+  return `<div class="card${band ? " banded" : ""}"${band ? ` style="--band:${band}"` : ""} onclick='openItem(${JSON.stringify(it.id)})'>
    <div class="ctop"><span class="type">${esc(it.ty)}</span><span class="csp"></span>${it.m ? `<span class="memb">${ic("lock", 11)}${isMember() ? "회원만" : "회원만 · 잠김"}</span>` : `<span class="free">누구나</span>`}${isNew ? '<span class="new">NEW</span>' : ""}</div>
    <h3>${esc(it.t)}</h3><p>${esc(it.d)}</p>
-   <div class="tags">${it.g.map(g => `<span class="tag">${esc(g)}</span>`).join("")}${it.a.map(a => `<span class="tag ${isAiTag(a) ? "ai" : ""}">${esc(a)}</span>`).join("")}</div>
+   <div class="tags">${it.g.map(g => `<span class="tag">${esc(g)}</span>`).join("")}${it.a.map(a => { const c = areaColor(a); return `<span class="tag${c ? " tmain" : ""}"${c ? ` style="--c:${c}"` : ""}>${esc(a)}</span>`; }).join("")}</div>
    <div class="cfoot"><span class="cby"><b>${esc(it.by)}</b> · ${esc(it.sc)}</span><span class="cmeta">${esc((it.dt || "").slice(5).replace("-", "."))}<span>조회 ${it.v}</span></span></div></div>`;
 }
 function listView(src, title, desc) {
