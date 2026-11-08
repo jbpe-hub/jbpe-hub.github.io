@@ -49,6 +49,10 @@ header{background:var(--navy);color:#fff}
 nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
 .nwrap{max-width:1160px;margin:0 auto;padding:0 20px;display:flex;gap:4px;overflow-x:auto}
 nav a{display:block;padding:13px 16px;color:var(--sub);text-decoration:none;font-weight:500;border-bottom:3px solid transparent;white-space:nowrap}
+nav a.nguide{margin-left:auto;display:flex;align-items:center;gap:6px}nav a.nguide .qi{width:18px;height:18px;border-radius:50%;background:var(--navy);color:#fff;font-size:11.5px;font-weight:700;display:grid;place-items:center}
+.guide{max-width:860px;margin:0 auto}.guide .panel h3{display:flex;align-items:center;gap:8px}.guide .panel h3 .gn{width:26px;height:26px;border-radius:8px;background:var(--navy);color:#fff;font-size:13px;display:grid;place-items:center;flex:0 0 26px}
+.guide ol,.guide ul{margin:6px 0 0;padding-left:20px;line-height:1.75;font-size:14.5px}.guide li b{color:var(--navy)}.guide .gtoc{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px}.guide .gtoc a{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;text-decoration:none;color:var(--text);background:#fff}
+.guide .gtip{background:#f6f7f9;border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--sub);margin-top:10px}
 nav a.on{color:var(--navy);border-color:var(--green);font-weight:700}
 nav a .lock{font-size:11px;background:#eef1f6;color:var(--sub);border-radius:6px;padding:1px 6px;margin-left:5px}
 main{max-width:1160px;margin:0 auto;padding:22px 20px 60px}
@@ -296,6 +300,7 @@ nav a .cnt{font-size:11px;background:var(--orange);color:#fff;border-radius:999p
   <a href="#members" data-v="members">회원 공간<span class="lock" id="lockTag">회원</span></a>
   <a href="#mine" data-v="mine" id="navMine">내가 올린 자료</a>
   <a href="#admin" data-v="admin" id="navAdmin">운영진 관리</a>
+  <a href="#guide" data-v="guide" class="nguide"><span class="qi" aria-hidden="true">?</span>사용 안내</a>
 </div></nav>
 <main id="main"><div class="loading">자료를 불러오는 중입니다…</div></main>
 <footer><span class="flogo" id="footLogo"></span>전북초등체육교과연구회 · 자료 이용 시 출처를 밝혀 주세요 · 학생 개인정보가 담긴 자료는 올리지 않습니다</footer>
@@ -478,6 +483,7 @@ function render() {
     const mine = MD.items.filter(i => i.own);
     m.innerHTML = `<div class="panel"><h3>내가 올린 자료 (${mine.length})</h3>${mine.length ? `<table class="rt"><tr><th>자료</th><th>내려받기</th><th>올린 날</th><th>조회</th><th></th></tr>${mine.map(i => `<tr><td>${esc(i.t)}</td><td>${i.m ? '<span class="status st-wait">회원만</span>' : '<span class="status st-ok">누구나</span>'}</td><td>${esc(i.dt)}</td><td>${i.v}</td><td style="text-align:right"><button class="btn mini" onclick='openUpload(${JSON.stringify(i.id)})'>고치기</button> <button class="btn mini" onclick='flip(${JSON.stringify(i.id)})'>${i.m ? "누구나 받기로" : "회원만 받기로"}</button> <button class="btn mini" onclick='hideItem(${JSON.stringify(i.id)})'>내리기</button></td></tr>`).join("")}</table>` : '<p style="color:var(--sub)">아직 올린 자료가 없습니다.</p>'}</div>`;
   }
+  else if (view === "guide") { m.innerHTML = guideView(); }
   else if (view === "admin") {
     if (!isAdmin()) { go("public"); return render(); }
     m.innerHTML = AD ? adminView() : `<div class="loading">불러오는 중…</div>`;
@@ -1154,10 +1160,53 @@ function copyRoster() {
   copyText(t, "승인·동의한 회원 명단을 복사했습니다. 한글이나 엑셀 표에 붙여 넣으세요");
 }
 
+/* ===== 사용 안내 ===== */
+function guideView() {
+  const S = [
+    ["g1", "자료실 둘러보기", `<ul>
+      <li>로그인하지 않아도 모든 자료의 <b>제목과 설명</b>을 볼 수 있어요.</li>
+      <li>위쪽 검색칸에 낱말을 넣거나, <b>학년·영역·자료 종류</b>를 눌러 골라 볼 수 있어요. 여러 개를 함께 고를 수도 있어요.</li>
+      <li><b>누구나 받기</b> 자료는 로그인 없이 내려받을 수 있고, <b>회원만 받기</b> 자료는 회원이 로그인해야 내려받을 수 있어요.</li>
+      <li>자료를 누르면 파일과 링크, 올린 선생님, 출처 표기가 나와요. 자료를 쓰실 때는 <b>출처 복사</b>를 눌러 출처를 꼭 밝혀 주세요.</li></ul>`],
+    ["g2", "회원 가입", `<ol>
+      <li>오른쪽 위 <b>구글 계정으로 로그인</b>을 누릅니다.</li>
+      <li><b>가입 신청</b>을 누르고 이름·소속·전화번호를 적습니다.</li>
+      <li>운영진이 승인하면 바로 회원이 됩니다. 산출물 제출 의무는 없어요.</li></ol>
+      <div class="gtip">회원 명단은 다음 해 전라북도 연구회 등록 명단과 연말 산출물 책자에 쓰일 수 있어요. 가입할 때 동의 여부를 고를 수 있고, 전화번호는 운영진만 봅니다.</div>`],
+    ["g3", "자료 올리기와 고치기", `<ol>
+      <li>회원으로 로그인한 뒤 오른쪽 위 <b>자료 올리기</b>를 누릅니다.</li>
+      <li>자료 이름, 설명, 학년, 영역, 자료 종류를 고릅니다.</li>
+      <li>파일(20MB까지)과 링크를 넣습니다. 둘 중 하나만 있어도 되고, 링크는 <b>+ 링크 추가</b>로 여러 개 넣을 수 있어요. 링크마다 설명을 달면 보는 선생님이 알아보기 쉬워요.</li>
+      <li><b>누구나 받기</b>와 <b>회원만 받기</b> 가운데 하나를 고르고 올립니다.</li></ol>
+      <ul><li>올린 자료는 <b>내가 올린 자료</b>에서 고치거나, 받기 범위를 바꾸거나, 목록에서 내릴 수 있어요.</li>
+      <li>영상은 파일 대신 유튜브 링크로 올려 주세요.</li></ul>
+      <div class="gtip">학생 얼굴이 알아보이는 사진·영상, 학생 실명, 교과서·출판사 자료 원본은 올리지 말아 주세요. PDF 자료는 내려받을 때 받은 선생님 이름과 날짜가 쪽마다 작게 찍혀요.</div>`],
+    ["g4", "회원 공간", `<ul>
+      <li><b>대화</b>: 지금 접속한 회원이 초록 점으로 보여요. 이름을 누르면 1:1 쪽지, <b>전체 대화방</b>은 회원 모두가 함께 보는 방이에요. 접속하지 않은 선생님께 남긴 쪽지는 다음에 접속하면 볼 수 있어요.</li>
+      <li><b>화상 회의</b>: 연구회 회의실(구글 미트)에 바로 들어갈 수 있어요. 지금 몇 명이 회의 중인지도 보여요. 3명 이상 회의는 60분이 지나면 끊기니, 같은 링크로 다시 들어오면 돼요.</li>
+      <li><b>자율연수 일정</b>: 달력에서 일정을 눌러 <b>참석하기</b>를 누르면 참석 명단에 들어가요. 화상 회의가 연결된 일정은 거기서 바로 들어갈 수 있어요.</li>
+      <li><b>공지</b>: 운영진 공지를 보고 댓글을 달 수 있어요.</li>
+      <li><b>산출물 책자</b>: 연말에 내 자료를 골라 책자에 넣고, 원고 PDF를 올리면 한 권으로 묶여요.</li></ul>`],
+    ["g5", "휴대폰에서 쓰기", `<ul>
+      <li>한 번 로그인하면 같은 기기에서는 로그인이 유지돼요. 공용 기기에서는 다 쓰신 뒤 <b>로그아웃</b>해 주세요.</li>
+      <li>휴대폰 브라우저 메뉴의 <b>홈 화면에 추가</b>를 누르면 앱처럼 바로 열 수 있어요.</li>
+      <li>카카오톡 안에서 열면 구글 로그인이 막힐 수 있어요. 그럴 때는 오른쪽 아래 메뉴에서 <b>다른 브라우저로 열기</b>를 눌러 주세요.</li></ul>`]
+  ];
+  if (isAdmin()) S.push(["g6", "운영진 안내", `<ul>
+      <li><b>운영진 관리</b>에서 가입 신청을 승인·보류하고, 회원을 운영진으로 올릴 수 있어요. <b>도 명단 복사</b>로 연번·이름·소속·전화번호를 한 번에 복사해요.</li>
+      <li>모든 자료를 고치거나 내릴 수 있고, 내려받기 기록을 볼 수 있어요.</li>
+      <li>회원 공간 탭 오른쪽 <b>⇅ 순서</b>로 탭 순서를 바꾸면 모든 회원에게 같은 순서로 보여요.</li>
+      <li>학년·영역·자료 종류 목록과 책자 제목은 관리 시트 <b>설정</b> 탭에서 고칩니다.</li></ul>`]);
+  return `<div class="guide"><div class="panel"><h3>전북초등체육교과연구회 자료실 사용 안내</h3><p style="margin:0;font-size:14.5px;color:var(--sub)">선생님들이 함께 만들고 나누는 초등 체육 수업 자료실이에요. 궁금한 곳을 눌러 바로 보세요.</p>
+   <div class="gtoc" style="margin-top:12px">${S.map(([id, t]) => `<a href="#guide" onclick="event.preventDefault();document.getElementById('${id}').scrollIntoView({behavior:'smooth',block:'start'})">${t}</a>`).join("")}</div></div>
+   ${S.map(([id, t, b], i) => `<div class="panel" id="${id}" style="scroll-margin-top:70px"><h3><span class="gn">${i + 1}</span>${t}</h3>${b}</div>`).join("")}
+   <p style="text-align:center;font-size:13px;color:var(--sub)">더 궁금한 점은 회원 공간 대화방이나 운영진에게 물어봐 주세요.</p></div>`;
+}
+
 /* ===== 시작 ===== */
 function route() {
   const h = location.hash.replace("#", "");
-  view = ["public", "members", "mine", "admin"].includes(h) ? h : "public";
+  view = ["public", "members", "mine", "admin", "guide"].includes(h) ? h : "public";
   render();
 }
 window.addEventListener("hashchange", route);
