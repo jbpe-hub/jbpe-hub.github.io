@@ -289,9 +289,6 @@ nav a .cnt{font-size:11px;background:var(--orange);color:#fff;border-radius:999p
 
 /* ===== 디자인 다듬기 ===== */
 .ic{flex:none;vertical-align:-3px}
-nav a{display:flex;align-items:center;gap:7px}
-nav a .nic{display:inline-flex;opacity:.75}nav a.on .nic{opacity:1;color:var(--green)}
-nav a.nguide .nic{color:var(--blue);opacity:1}
 .hero{padding:22px 24px;box-shadow:0 1px 2px rgba(16,24,40,.04);transition:box-shadow .2s}
 .hero:hover{box-shadow:0 6px 20px rgba(23,50,92,.07)}
 .hlabel{display:flex;align-items:center;gap:8px;margin-bottom:6px}
@@ -299,17 +296,9 @@ nav a.nguide .nic{color:var(--blue);opacity:1}
 .hlabel small{font-size:12px;color:#98a2b3}
 .hero h2{font-size:22px;letter-spacing:-.4px}
 .htxt{flex:1;min-width:260px;max-width:620px}
-.stats{gap:12px}
-.stat{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:14px;padding:12px 16px 12px 12px;min-width:132px;background:linear-gradient(135deg,#fafbfd,#eef3fb)}
-.stat .si{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:rgba(43,87,151,.1);color:var(--blue)}
-.stat.s2{background:linear-gradient(135deg,#fafbfd,#e9f5ee)}.stat.s2 .si{background:rgba(47,138,87,.12);color:var(--green)}.stat.s2 b{color:var(--green)}
-.stat.s3{background:linear-gradient(135deg,#fafbfd,#fcf0e2)}.stat.s3 .si{background:rgba(224,134,43,.13);color:var(--orange)}
-.stat span{display:block;font-size:12px;color:var(--sub);font-weight:500}
-.stat b{font-size:24px;line-height:1.15;letter-spacing:-.5px}
-@media(max-width:600px){.stats{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{flex-direction:column;text-align:center;min-width:0;padding:12px 6px;gap:6px}}
 aside{padding:18px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
 .fhead{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid #eef1f5}
-.fhead b{display:flex;align-items:center;gap:7px;font-size:15px;color:var(--text)}.fhead b .ic{color:var(--blue)}
+.fhead b{display:flex;align-items:center;gap:7px;font-size:15px;color:var(--text)}
 .fcnt{font-size:11px;background:var(--green);color:#fff;border-radius:999px;padding:0 7px;font-weight:700}
 .freset{border:0;background:none;color:#98a2b3;font-size:12.5px;display:flex;align-items:center;gap:4px;padding:2px 4px;text-decoration:underline;text-underline-offset:2px}
 .freset:hover{color:var(--sub)}
@@ -322,7 +311,7 @@ aside h4:not(:first-of-type){border-top:1px solid #f1f3f6;padding-top:14px}
 .toolbar{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;align-items:center;box-shadow:0 1px 2px rgba(16,24,40,.04)}
 .sbox{flex:1;min-width:200px;position:relative;display:flex;align-items:center}
 .sbox .ic{position:absolute;left:13px;color:#98a2b3;pointer-events:none}
-.sbox .search{width:100%;padding-left:38px;background:#f8fafc;border-radius:11px;transition:.15s}
+.sbox .search{width:100%;background:#f8fafc;border-radius:11px;transition:.15s}
 .sbox .search:focus{outline:none;background:#fff;border-color:var(--blue);box-shadow:0 0 0 3px rgba(43,87,151,.15)}
 .toolbar .count{margin:0;font-size:13px;white-space:nowrap}
 @media(max-width:600px){.sbox{flex:1 1 100%}.toolbar .count{flex:1;padding-left:4px}}.toolbar .count b{color:var(--text)}
@@ -356,11 +345,11 @@ aside h4:not(:first-of-type){border-top:1px solid #f1f3f6;padding-top:14px}
   <div class="hright" id="hright"></div>
 </div></header>
 <nav><div class="nwrap">
-  <a href="#public" data-v="public"><span class="nic" data-i="folder"></span>자료실</a>
-  <a href="#members" data-v="members"><span class="nic" data-i="users"></span>회원 공간<span class="lock" id="lockTag">회원</span></a>
-  <a href="#mine" data-v="mine" id="navMine"><span class="nic" data-i="fileCheck"></span>내가 올린 자료</a>
-  <a href="#admin" data-v="admin" id="navAdmin"><span class="nic" data-i="shield"></span>운영진 관리</a>
-  <a href="#guide" data-v="guide" class="nguide"><span class="nic" data-i="help"></span>사용 안내</a>
+  <a href="#public" data-v="public">자료실</a>
+  <a href="#members" data-v="members">회원 공간<span class="lock" id="lockTag">회원</span></a>
+  <a href="#mine" data-v="mine" id="navMine">내가 올린 자료</a>
+  <a href="#admin" data-v="admin" id="navAdmin">운영진 관리</a>
+  <a href="#guide" data-v="guide" class="nguide"><span class="qi" aria-hidden="true">?</span>사용 안내</a>
 </div></nav>
 <main id="main"><div class="loading">자료를 불러오는 중입니다…</div></main>
 <footer><span class="flogo" id="footLogo"></span>전북초등체육교과연구회 · 자료 이용 시 출처를 밝혀 주세요 · 학생 개인정보가 담긴 자료는 올리지 않습니다</footer>
@@ -493,55 +482,38 @@ function match(it) {
 }
 function tog(k, x) { const i = f[k].indexOf(x); i < 0 ? f[k].push(x) : f[k].splice(i, 1); render(); }
 const ICONS = {
-  folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>',
-  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-  fileCheck: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/>',
-  shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
-  help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
-  files: '<path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>',
-  cpu: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/>',
-  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
-  filter: '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
-  reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
-  grad: '<path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.83l8.57 3.91a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
-  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
-  layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
-  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
-  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
-  lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
-  eye: '<path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/>',
-  sparkles: '<path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"/>'
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'
 };
 const ic = (n, sz = 16) => `<svg class="ic" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ""}</svg>`;
 function chipRow(list, key) { return list.map(x => `<button class="chip ${f[key].includes(x) ? "on" : ""}" onclick='tog("${key}",${JSON.stringify(x)})'>${esc(x)}</button>`).join(""); }
 function filters() {
   const nF = f.g.length + f.a.length + f.ty.length + f.dl.length;
   return `<aside>
-   <div class="fhead"><b>${ic("filter", 15)}자료 찾기${nF ? `<span class="fcnt">${nF}</span>` : ""}</b><button class="freset" onclick="f={q:'',g:[],a:[],ty:[],dl:[],sort:f.sort};render()">${ic("reset", 13)}초기화</button></div>
-   <h4>${ic("grad", 14)}학년</h4><div class="chips">${chipRow(CFG.grades, "g")}</div>
-   <h4>${ic("target", 14)}영역</h4>
+   <div class="fhead"><b>자료 찾기${nF ? `<span class="fcnt">${nF}</span>` : ""}</b><button class="freset" onclick="f={q:'',g:[],a:[],ty:[],dl:[],sort:f.sort};render()">초기화</button></div>
+   <h4>학년</h4><div class="chips">${chipRow(CFG.grades, "g")}</div>
+   <h4>영역</h4>
    ${CFG.areas.map(A => `<div class="area-group"><button class="chip main ${f.a.includes(A.n) ? "on" : ""}" ${areaStyle(A.n)} onclick='tog("a",${JSON.stringify(A.n)})'>${esc(A.n)}</button>${A.s.length ? `<div class="subs">${chipRow(A.s, "a")}</div>` : ""}</div>`).join("")}
-   <h4>${ic("layers", 14)}자료 종류</h4><div class="chips">${chipRow(CFG.types, "ty")}</div>
-   <h4>${ic("download", 14)}내려받기</h4><div class="chips">${chipRow(["누구나 받기", "회원만 받기"], "dl")}</div>
+   <h4>자료 종류</h4><div class="chips">${chipRow(CFG.types, "ty")}</div>
+   <h4>내려받기</h4><div class="chips">${chipRow(["누구나 받기", "회원만 받기"], "dl")}</div>
   </aside>`;
 }
 function card(it) {
   const isNew = (new Date(TODAY) - new Date(it.dt)) / 864e5 < 7;
   const isAi = it.a.some(isAiTag);
   return `<div class="card${isAi ? " aicard" : ""}" onclick='openItem(${JSON.stringify(it.id)})'>
-   <div class="ctop"><span class="type">${isAi ? ic("sparkles", 12) : ""}${esc(it.ty)}</span><span class="csp"></span>${it.m ? `<span class="memb">${ic("lock", 11)}${isMember() ? "회원만" : "회원만 · 잠김"}</span>` : `<span class="free">누구나</span>`}${isNew ? '<span class="new">NEW</span>' : ""}</div>
+   <div class="ctop"><span class="type">${esc(it.ty)}</span><span class="csp"></span>${it.m ? `<span class="memb">${ic("lock", 11)}${isMember() ? "회원만" : "회원만 · 잠김"}</span>` : `<span class="free">누구나</span>`}${isNew ? '<span class="new">NEW</span>' : ""}</div>
    <h3>${esc(it.t)}</h3><p>${esc(it.d)}</p>
    <div class="tags">${it.g.map(g => `<span class="tag">${esc(g)}</span>`).join("")}${it.a.map(a => `<span class="tag ${isAiTag(a) ? "ai" : ""}">${esc(a)}</span>`).join("")}</div>
-   <div class="cfoot"><span class="cby"><b>${esc(it.by)}</b> · ${esc(it.sc)}</span><span class="cmeta">${esc((it.dt || "").slice(5).replace("-", "."))}<span class="views">${ic("eye", 12)}${it.v}</span></span></div></div>`;
+   <div class="cfoot"><span class="cby"><b>${esc(it.by)}</b> · ${esc(it.sc)}</span><span class="cmeta">${esc((it.dt || "").slice(5).replace("-", "."))}<span>조회 ${it.v}</span></span></div></div>`;
 }
 function listView(src, title, desc) {
   let list = src.filter(match);
   list.sort(f.sort === "pop" ? (a, b) => b.v - a.v : (a, b) => b.dt.localeCompare(a.dt));
   const ai = src.filter(i => i.a.some(isAiTag)).length, teachers = new Set(src.map(i => i.by)).size;
   return `<div class="hero"><div class="htxt"><div class="hlabel"><span>수업 자료 나눔터</span>${src.length ? `<small>최근 업데이트 ${esc(src.map(i => i.dt).sort().pop().replace(/-/g, "."))}</small>` : ""}</div><h2>${title}</h2><p>${desc}</p></div>
-   <div class="stats"><div class="stat s1"><span class="si">${ic("files", 19)}</span><div><span>전체 자료</span><b>${src.length}</b></div></div><div class="stat s2"><span class="si">${ic("cpu", 19)}</span><div><span>AI·에듀테크</span><b>${ai}</b></div></div><div class="stat s3"><span class="si">${ic("heart", 19)}</span><div><span>나눈 선생님</span><b>${teachers}</b></div></div></div></div>
+   <div class="stats"><div class="stat"><b>${src.length}</b><span>전체 자료</span></div><div class="stat"><b>${ai}</b><span>AI·에듀테크</span></div><div class="stat"><b>${teachers}</b><span>나눈 선생님</span></div></div></div>
    <div class="layout">${filters()}<section>
-    <div class="toolbar"><div class="sbox">${ic("search", 16)}<input class="search" id="q" placeholder="자료 이름, 내용, 선생님 이름으로 찾기" value="${esc(f.q)}"></div>
+    <div class="toolbar"><div class="sbox"><input class="search" id="q" placeholder="자료 이름, 내용, 선생님 이름으로 찾기" value="${esc(f.q)}"></div>
      <span class="count">총 <b>${list.length}개</b> 자료</span>
      <select id="sort"><option value="new" ${f.sort === "new" ? "selected" : ""}>최신순</option><option value="pop" ${f.sort === "pop" ? "selected" : ""}>많이 본 순</option></select></div>
     ${list.length ? `<div class="grid">${list.map(card).join("")}</div>` : `<div class="empty">${src.length ? "조건에 맞는 자료가 없습니다. 필터를 줄여 보세요." : "아직 올라온 자료가 없습니다."}</div>`}
@@ -1295,7 +1267,6 @@ function route() {
 window.addEventListener("hashchange", route);
 $("#logoBox").innerHTML = symSvg(38);
 $("#footLogo").innerHTML = symSvg(22);
-document.querySelectorAll(".nic").forEach(e => e.innerHTML = ic(e.dataset.i, 16));
 if (!apiReady()) { const b = $("#setupBar"); b.style.display = "block"; b.textContent = "설치 중: 서버 주소(API_URL)가 아직 연결되지 않았습니다. 설치를 마치면 이 줄이 사라집니다."; }
 loadPublic(false).then(route);
 
