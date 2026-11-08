@@ -717,7 +717,7 @@ function askPhone() {
    <div class="sheetnote" style="margin-top:4px">전화번호는 도교육청 교과연구회 등록 서류와 연구회 연락에만 쓰이며, 운영진만 볼 수 있습니다.</div>
    <details class="priv"><summary>개인정보 수집·이용 안내 (펼쳐 보기)</summary><table>
 <tr><th>수집 항목</th><td>이름, 소속 학교, 휴대전화 번호, 구글 계정 이메일</td></tr>
-<tr><th>이용 목적</th><td>회원 확인과 관리, 연구회 연락, 도교육청 교과연구회 등록 서류(동의한 경우), 산출물 책자 참여 회원 표기(동의한 경우)</td></tr>
+<tr><th>이용 목적</th><td>회원 확인과 관리, 연구회 연락, 도교육청 교과연구회 등록 명단 제출, 산출물 책자 참여 회원 표기(동의한 경우)</td></tr>
 <tr><th>보관 기간</th><td>탈퇴하거나 삭제를 요청할 때까지 (요청하면 바로 지웁니다)</td></tr>
 <tr><th>볼 수 있는 사람</th><td>연구회 운영진 (전화번호는 다른 회원에게 보이지 않습니다)</td></tr></table>
 <p>전화번호를 저장하면 위 내용에 동의한 것으로 봅니다. 원하지 않으시면 [나중에]를 누르고 운영진에게 말씀해 주세요.</p></details>
@@ -743,12 +743,12 @@ async function openJoin() {
    <div class="sheetnote" style="margin-top:4px">전화번호는 도교육청 교과연구회 등록 서류와 연구회 연락에만 쓰이며, 운영진만 볼 수 있습니다.</div>
    <details class="priv"><summary>개인정보 수집·이용 안내 (펼쳐 보기)</summary><table>
 <tr><th>수집 항목</th><td>이름, 소속 학교, 휴대전화 번호, 구글 계정 이메일</td></tr>
-<tr><th>이용 목적</th><td>회원 확인과 관리, 연구회 연락, 도교육청 교과연구회 등록 서류(동의한 경우), 산출물 책자 참여 회원 표기(동의한 경우)</td></tr>
+<tr><th>이용 목적</th><td>회원 확인과 관리, 연구회 연락, 도교육청 교과연구회 등록 명단 제출, 산출물 책자 참여 회원 표기(동의한 경우)</td></tr>
 <tr><th>보관 기간</th><td>탈퇴하거나 삭제를 요청할 때까지 (요청하면 바로 지웁니다)</td></tr>
 <tr><th>볼 수 있는 사람</th><td>연구회 운영진 (전화번호는 다른 회원에게 보이지 않습니다)</td></tr></table>
 <p>동의하지 않을 수 있으나, 동의하지 않으면 회원 가입을 할 수 없습니다.</p></details>
    <label class="check"><input type="checkbox" id="jpriv"> <span><b>(필수)</b> 위 개인정보 수집·이용에 동의합니다.</span></label>
-   <label class="check"><input type="checkbox" id="jreg" checked> 내년도 도교육청 연구회 등록 회원 명단에 이름·소속·전화번호를 올리는 데 동의합니다.</label>
+   <label class="check"><input type="checkbox" id="jreg"> <span><b>(필수)</b> 내년도 도교육청 연구회 등록 회원 명단에 이름·소속·전화번호를 올리는 데 동의합니다. 연구회는 도교육청에 등록된 교과연구회라, 회원은 모두 등록 명단에 올라갑니다.</span></label>
    <label class="check"><input type="checkbox" id="jnm" checked> 연말 산출물 책자에 참여 회원으로 이름(소속)을 올리는 데 동의합니다.</label>
    <label class="check"><input type="checkbox" id="jc"> 회원 전용 자료를 외부로 옮기거나 공유하지 않고, 자료를 쓸 때 출처를 밝히겠습니다.</label></div>
    <div class="err" id="jerr"></div>
@@ -759,6 +759,7 @@ async function sendJoin() {
   if (!name || !school) { $("#jerr").textContent = "이름과 소속을 적어 주세요."; return; }
   if (!validPhone(phone)) { $("#jerr").textContent = "휴대전화 번호를 확인해 주세요. (예: 010-1234-5678)"; return; }
   if (!$("#jpriv").checked) { $("#jerr").textContent = "개인정보 수집·이용에 동의해 주세요."; return; }
+  if (!$("#jreg").checked) { $("#jerr").textContent = "도교육청 연구회 등록 명단 제출에 동의해야 가입할 수 있어요."; return; }
   if (!$("#jc").checked) { $("#jerr").textContent = "회원 자료 이용 약속에 체크해 주세요."; return; }
   try { busy(true); ME = (await api("join", { name, school, phone, book: $("#jnm").checked, reg: $("#jreg").checked })).me; closeM(); render(); toast("가입 신청을 보냈습니다. 운영진이 승인하면 회원만 받기 자료와 회원 공간이 열려요"); }
   catch (e) { $("#jerr").textContent = e.message; } finally { busy(false); }
@@ -1312,7 +1313,7 @@ function guideView() {
       <li>오른쪽 위 <b>구글 계정으로 로그인</b>을 누릅니다.</li>
       <li><b>가입 신청</b>을 누르고 이름·소속·전화번호를 적습니다.</li>
       <li>운영진이 승인하면 바로 회원이 됩니다. 산출물 제출 의무는 없어요.</li></ol>
-      <div class="gtip">회원 명단은 다음 해 전라북도 연구회 등록 명단과 연말 산출물 책자에 쓰일 수 있어요. 가입할 때 동의 여부를 고를 수 있고, 전화번호는 운영진만 봅니다.</div>`],
+      <div class="gtip">회원은 모두 다음 해 전라북도 교과연구회 등록 명단에 올라가므로, 가입할 때 명단 제출 동의가 꼭 필요해요. 산출물 책자에 이름을 싣는 것은 고를 수 있고, 전화번호는 운영진만 봅니다.</div>`],
     ["g3", "자료 올리기와 고치기", `<ol>
       <li>회원으로 로그인한 뒤 오른쪽 위 <b>자료 올리기</b>를 누릅니다.</li>
       <li>자료 이름, 설명, 학년, 영역, 자료 종류를 고릅니다.</li>
