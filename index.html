@@ -137,6 +137,13 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
 .cfoot span:last-child{white-space:nowrap}
 .subtabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .subtabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 16px;font-size:14px;font-weight:500;color:var(--sub)}
+.priv{margin:12px 0 4px;font-size:13px;color:var(--sub);border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#fafbfd}
+.priv summary{cursor:pointer;font-weight:700;color:var(--text)}.priv table{margin-top:8px;font-size:12.5px}.priv th{width:92px;background:none;vertical-align:top;padding:5px 6px}.priv td{padding:5px 6px}.priv p{margin:6px 0 0}
+.inapp{position:fixed;inset:0;background:rgba(15,25,45,.6);z-index:40;display:flex;align-items:center;justify-content:center;padding:18px}
+.inapp .box{background:#fff;border-radius:18px;max-width:420px;width:100%;padding:22px;text-align:center}
+.inapp h2{margin:0 0 8px;font-size:19px}.inapp p{margin:0 0 12px;font-size:14px;color:var(--sub);line-height:1.6}
+.inapp .steps{text-align:left;background:#f6f7f9;border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:14px;line-height:1.7}
+.inapp .btns{display:flex;flex-direction:column;gap:8px}
 .lrow{display:flex;gap:6px;margin-top:6px}.lrow .ll{flex:0 0 38%}.lrow .lu{flex:1;min-width:0}.lrow .btn{flex:0 0 auto}
 @media(max-width:520px){.lrow{flex-wrap:wrap}.lrow .ll{flex:1 1 100%}}
 .curf{background:#f6f7f9;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:var(--text)}
@@ -400,7 +407,35 @@ const isAdmin = () => !!(ME && ME.admin);
 /* ===== 파이어베이스 로그인 ===== */
 firebase.initializeApp(Object.assign({}, FIREBASE_CONFIG, window.JBPE_DB_URL ? { databaseURL: window.JBPE_DB_URL } : {}));
 const AUTH = firebase.auth();
+/* 카카오톡 등 앱 안 브라우저: 구글이 로그인을 막으므로 바깥 브라우저로 */
+const UA = navigator.userAgent || "";
+const INAPP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|BAND\/|DaumApps|everytimeApp|; wv\)/i.test(UA);
+const IS_IOS = /iPhone|iPad|iPod/i.test(UA), IS_KAKAO = /KAKAOTALK/i.test(UA);
+function openOutside() {
+  const url = location.href;
+  if (IS_KAKAO) { location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(url); return; }
+  if (!IS_IOS) { location.href = "intent://" + url.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;end"; return; }
+  inappHelp(true);
+}
+function inappHelp(force) {
+  if (document.querySelector(".inapp")) return;
+  const d = document.createElement("div"); d.className = "inapp";
+  d.innerHTML = `<div class="box"><h2>다른 브라우저로 열어 주세요</h2>
+   <p>지금은 ${IS_KAKAO ? "카카오톡" : "앱"} 안의 브라우저로 열려 있어요. 구글이 이런 곳에서는 로그인을 막고 있어서, 사파리나 크롬에서 열어야 로그인할 수 있어요.</p>
+   <div class="steps">${IS_IOS
+     ? (IS_KAKAO ? "1. 오른쪽 아래 <b>⋯</b> 또는 공유 단추를 누릅니다.<br>2. <b>Safari로 열기</b>(다른 브라우저로 열기)를 누릅니다." : "1. 화면의 <b>⋯</b> 메뉴를 누릅니다.<br>2. <b>Safari로 열기</b> 또는 <b>브라우저로 열기</b>를 누릅니다.")
+     : "1. 오른쪽 위 <b>⋮</b> 메뉴를 누릅니다.<br>2. <b>다른 브라우저로 열기</b>를 누르고 <b>Chrome</b>을 고릅니다."}</div>
+   <div class="btns">${!IS_IOS || IS_KAKAO ? `<button class="btn primary" onclick="openOutside()">${IS_IOS ? "Safari로 열기" : "Chrome으로 열기"}</button>` : ""}
+   <button class="btn" onclick="copyText(location.href,'주소를 복사했어요. 브라우저 주소창에 붙여 넣어 주세요')">주소 복사</button>
+   <button class="btn" style="border:0;color:var(--sub)" onclick="this.closest('.inapp').remove()">로그인 없이 둘러보기</button></div></div>`;
+  document.body.appendChild(d);
+}
+if (INAPP) {
+  let tried = false; try { tried = sessionStorage.getItem("jbpe_out") === "1"; sessionStorage.setItem("jbpe_out", "1"); } catch (e) {}
+  if (IS_KAKAO && !tried) openOutside();
+}
 async function login() {
+  if (INAPP) { inappHelp(); return; }
   try { await AUTH.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
   catch (e) { if (e.code !== "auth/popup-closed-by-user") toast("로그인하지 못했어요: " + (e.message || e.code)); }
 }
@@ -664,6 +699,12 @@ function askPhone() {
   openM(`<h2>연락처를 추가해 주세요</h2><p style="margin:0;color:var(--sub);font-size:14px">내년도 도교육청 교과연구회 등록 서류에 회원 전화번호가 필요해졌어요. 한 번만 적어 주시면 됩니다.</p>
    <div class="form"><label for="pp">휴대전화</label><input type="tel" id="pp" inputmode="numeric" autocomplete="tel" placeholder="예: 010-1234-5678">
    <div class="sheetnote" style="margin-top:4px">전화번호는 도교육청 교과연구회 등록 서류와 연구회 연락에만 쓰이며, 운영진만 볼 수 있습니다.</div>
+   <details class="priv"><summary>개인정보 수집·이용 안내 (펼쳐 보기)</summary><table>
+<tr><th>수집 항목</th><td>이름, 소속 학교, 휴대전화 번호, 구글 계정 이메일</td></tr>
+<tr><th>이용 목적</th><td>회원 확인과 관리, 연구회 연락, 도교육청 교과연구회 등록 서류(동의한 경우), 산출물 책자 참여 회원 표기(동의한 경우)</td></tr>
+<tr><th>보관 기간</th><td>탈퇴하거나 삭제를 요청할 때까지 (요청하면 바로 지웁니다)</td></tr>
+<tr><th>볼 수 있는 사람</th><td>연구회 운영진 (전화번호는 다른 회원에게 보이지 않습니다)</td></tr></table>
+<p>전화번호를 저장하면 위 내용에 동의한 것으로 봅니다. 원하지 않으시면 [나중에]를 누르고 운영진에게 말씀해 주세요.</p></details>
    <label class="check"><input type="checkbox" id="preg" checked> 내년도 도교육청 연구회 등록 회원 명단에 이름·소속·전화번호를 올리는 데 동의합니다.</label></div>
    <div class="err" id="perr"></div>
    <div class="mfoot"><button class="btn" onclick="closeM()">나중에</button><button class="btn primary" onclick="sendPhone()">저장</button></div>`);
@@ -684,6 +725,13 @@ async function openJoin() {
    <div class="form"><label for="jn">이름</label><input type="text" id="jn" placeholder="예: 홍길동"><label for="js">소속 학교</label><input type="text" id="js" placeholder="예: 햇살초등학교">
    <label for="jp">휴대전화</label><input type="tel" id="jp" inputmode="numeric" autocomplete="tel" placeholder="예: 010-1234-5678">
    <div class="sheetnote" style="margin-top:4px">전화번호는 도교육청 교과연구회 등록 서류와 연구회 연락에만 쓰이며, 운영진만 볼 수 있습니다.</div>
+   <details class="priv"><summary>개인정보 수집·이용 안내 (펼쳐 보기)</summary><table>
+<tr><th>수집 항목</th><td>이름, 소속 학교, 휴대전화 번호, 구글 계정 이메일</td></tr>
+<tr><th>이용 목적</th><td>회원 확인과 관리, 연구회 연락, 도교육청 교과연구회 등록 서류(동의한 경우), 산출물 책자 참여 회원 표기(동의한 경우)</td></tr>
+<tr><th>보관 기간</th><td>탈퇴하거나 삭제를 요청할 때까지 (요청하면 바로 지웁니다)</td></tr>
+<tr><th>볼 수 있는 사람</th><td>연구회 운영진 (전화번호는 다른 회원에게 보이지 않습니다)</td></tr></table>
+<p>동의하지 않을 수 있으나, 동의하지 않으면 회원 가입을 할 수 없습니다.</p></details>
+   <label class="check"><input type="checkbox" id="jpriv"> <span><b>(필수)</b> 위 개인정보 수집·이용에 동의합니다.</span></label>
    <label class="check"><input type="checkbox" id="jreg" checked> 내년도 도교육청 연구회 등록 회원 명단에 이름·소속·전화번호를 올리는 데 동의합니다.</label>
    <label class="check"><input type="checkbox" id="jnm" checked> 연말 산출물 책자에 참여 회원으로 이름(소속)을 올리는 데 동의합니다.</label>
    <label class="check"><input type="checkbox" id="jc"> 회원 전용 자료를 외부로 옮기거나 공유하지 않고, 자료를 쓸 때 출처를 밝히겠습니다.</label></div>
@@ -694,6 +742,7 @@ async function sendJoin() {
   const name = $("#jn").value.trim(), school = $("#js").value.trim(), phone = $("#jp").value.trim();
   if (!name || !school) { $("#jerr").textContent = "이름과 소속을 적어 주세요."; return; }
   if (!validPhone(phone)) { $("#jerr").textContent = "휴대전화 번호를 확인해 주세요. (예: 010-1234-5678)"; return; }
+  if (!$("#jpriv").checked) { $("#jerr").textContent = "개인정보 수집·이용에 동의해 주세요."; return; }
   if (!$("#jc").checked) { $("#jerr").textContent = "회원 자료 이용 약속에 체크해 주세요."; return; }
   try { busy(true); ME = (await api("join", { name, school, phone, book: $("#jnm").checked, reg: $("#jreg").checked })).me; closeM(); render(); toast("가입 신청을 보냈습니다. 운영진이 승인하면 회원만 받기 자료와 회원 공간이 열려요"); }
   catch (e) { $("#jerr").textContent = e.message; } finally { busy(false); }
@@ -1257,7 +1306,7 @@ function guideView() {
     ["g5", "휴대폰에서 쓰기", `<ul>
       <li>한 번 로그인하면 같은 기기에서는 로그인이 유지돼요. 공용 기기에서는 다 쓰신 뒤 <b>로그아웃</b>해 주세요.</li>
       <li>휴대폰 브라우저 메뉴의 <b>홈 화면에 추가</b>를 누르면 앱처럼 바로 열 수 있어요.</li>
-      <li>카카오톡 안에서 열면 구글 로그인이 막힐 수 있어요. 그럴 때는 오른쪽 아래 메뉴에서 <b>다른 브라우저로 열기</b>를 눌러 주세요.</li></ul>`]
+      <li>카카오톡·밴드 같은 앱 안에서 열면 구글이 로그인을 막아요. 카카오톡에서는 자동으로 기본 브라우저로 넘어가고, 넘어가지 않으면 로그인을 누를 때 여는 방법이 안내돼요.</li></ul>`]
   ];
   if (isAdmin()) S.push(["g6", "운영진 안내", `<ul>
       <li><b>운영진 관리</b>에서 가입 신청을 승인·보류하고, 회원을 운영진으로 올릴 수 있어요. <b>도 명단 복사</b>로 연번·이름·소속·전화번호를 한 번에 복사해요.</li>
