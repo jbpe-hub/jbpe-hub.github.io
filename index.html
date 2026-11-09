@@ -151,6 +151,19 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
 .inapp .steps{text-align:left;background:#f6f7f9;border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:14px;line-height:1.7}
 .inapp .btns{display:flex;flex-direction:column;gap:8px}
 .msguide{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#f4f8f5;border:1px solid #cfe6d8;border-radius:12px;padding:12px 14px;margin:0 0 10px}.msguide>div{flex:1;min-width:240px;font-size:13.5px;color:var(--sub)}.msguide b{display:block;color:var(--text);font-size:14px}.msguide .btn{text-decoration:none;white-space:nowrap}
+.revbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}.revbar select{height:40px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:#fff;max-width:100%}.revbar .sp{flex:1}
+.revlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}
+.rev{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.rhead{display:flex;align-items:center;gap:6px}.rhead .sp{flex:1}
+.rev-ev{font-size:12px;font-weight:700;color:var(--blue);background:#eef3fb;border:1px solid #d9e4f5;border-radius:6px;padding:2px 9px}
+.rby{font-size:12.5px;color:var(--sub);margin:8px 0 6px}.rby b{color:var(--text)}
+.rbody{white-space:pre-wrap;font-size:14.5px;line-height:1.7;word-break:break-word}
+.rph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.rph .ph{aspect-ratio:1;border-radius:10px;background:#eef1f5;overflow:hidden}.rph img{width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block}
+.rfoot{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #eef1f5}
+.like{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;color:var(--sub);transition:.15s}.like:hover{border-color:#e5484d;color:#e5484d}.like.on{background:#fdecec;border-color:#f3b4b6;color:#d93a3f;font-weight:700}
+.likers{font-size:12px;color:#98a2b3}
+.rvprev{display:flex;gap:6px;margin-top:6px;font-size:13px;color:var(--sub)}.rvprev img{width:84px;height:84px;object-fit:cover;border-radius:8px}
+.evrev{display:flex;align-items:center;gap:6px;background:#f6f7f9;border-radius:10px;padding:8px 10px;margin:10px 0;font-size:13.5px}.evrev span{flex:1}
 .lrow{display:flex;gap:6px;margin-top:6px}.lrow .ll{flex:0 0 38%}.lrow .lu{flex:1;min-width:0}.lrow .btn{flex:0 0 auto}
 @media(max-width:520px){.lrow{flex-wrap:wrap}.lrow .ll{flex:1 1 100%}}
 .curf{background:#f6f7f9;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:var(--text)}
@@ -594,7 +607,7 @@ function render() {
   }
   else if (view === "members") {
     if (!isMember()) m.innerHTML = memberTabs() + `<div class="gate"><div class="gicon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b5651d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h2>회원만 볼 수 있어요</h2><p>회원 대화방·쪽지, 자율연수 일정, 공지, 산출물 책자는 승인된 회원에게만 열립니다.<br>산출물 제출 의무 없이 가입할 수 있어요.</p>${ME ? "" : `<button class="btn primary" onclick="login()">구글 계정으로 로그인</button> `}<button class="btn" onclick="openJoin()">가입 신청</button></div>`;
-    else m.innerHTML = memberTabs() + (msub === "chat" ? chatView() : msub === "meet" ? meetView() : msub === "cal" ? calView() : msub === "notice" ? noticeView() : bookView());
+    else m.innerHTML = memberTabs() + (msub === "chat" ? chatView() : msub === "meet" ? meetView() : msub === "cal" ? calView() : msub === "notice" ? noticeView() : msub === "review" ? reviewView() : bookView());
   }
   else if (view === "mine") {
     if (!isMember()) { go("public"); return render(); }
@@ -840,7 +853,7 @@ async function hideItem(id) {
 }
 
 /* ===== 회원 공간 탭 ===== */
-const MTABS = { chat: "대화", meet: "화상 회의", cal: "자율연수 일정", notice: "공지", book: "산출물 책자" };
+const MTABS = { chat: "대화", meet: "화상 회의", cal: "자율연수 일정", review: "연수 후기", notice: "공지", book: "산출물 책자" };
 let msubPicked = false;
 function tabOrder() {
   const saved = (MEET.cfg && Array.isArray(MEET.cfg.tabs)) ? MEET.cfg.tabs.filter(k => MTABS[k]) : [];
@@ -884,6 +897,7 @@ function openEv(id) {
   const e = MD.schedules.find(s => s.id === id), d = new Date(e.d);
   openM(`<h2>${esc(e.t)}</h2><dl class="meta"><dt>날짜</dt><dd>${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일 ${esc(e.tm)}</dd><dt>장소</dt><dd>${esc(e.p)}</dd><dt>참석 예정</dt><dd>${e.att.length ? e.att.map(esc).join(", ") : "아직 없음"}</dd>${evMeetUrl(id) ? `<dt>화상 회의</dt><dd><button class="btn mini ok" onclick='joinMeet(${JSON.stringify(evMeetUrl(id))},${JSON.stringify(e.t)})'>구글 미트 입장</button></dd>` : ""}</dl>
   ${isAdmin() && chatReady() ? `<div class="form" style="margin:0"><label for="evmu">화상 회의 연결 (운영진)</label><input type="text" id="evmu" value="${esc(MEET.ev[id] || "")}" placeholder="구글 미트 링크, 또는 room (연구회 회의실 사용), 비우면 연결 안 함"></div><div class="err" id="evmerr"></div>` : ""}
+  ${e.d <= TODAY && chatReady() ? `<div class="evrev"><span>이 연수 후기 ${revOf(id).length}개</span><button class="btn mini" onclick='closeM();REVF=${JSON.stringify(id)};pickTab("review")'>후기 보기</button><button class="btn mini ok" onclick='closeM();openRevForm(null,${JSON.stringify(id)})'>후기 쓰기</button></div>` : ""}
   <div class="mfoot">${isAdmin() ? `<button class="btn" onclick='delEv(${JSON.stringify(id)})'>일정 삭제</button>${chatReady() ? `<button class="btn" onclick='saveEvMeet(${JSON.stringify(id)})'>화상 회의 저장</button>` : ""}` : ""}<button class="btn primary" onclick='closeM();toggleAtt(${JSON.stringify(id)})'>${e.me ? "참석 취소" : "참석하기"}</button></div>`);
 }
 async function delEv(id) { try { busy(true); await api("delSchedule", { id }); closeM(); await loadMember(); render(); } catch (e) { toast(e.message); } finally { busy(false); } }
@@ -1227,6 +1241,8 @@ function meetStart() {
   const db = CHAT.db;
   const r1 = db.ref("meet"); r1.on("value", s => { const before = tabOrder().join(); MEET.cfg = s.val(); const changed = tabOrder().join() !== before; if (!msubPicked) msub = tabOrder()[0]; if (changed && view === "members") render(); else meetPaint(); }); CHAT.refs.push(r1);
   const r2 = db.ref("meetIn"); r2.on("value", s => { MEET.inRoom = s.val() || {}; meetPaint(); }); CHAT.refs.push(r2);
+  const r4 = db.ref("reviews").orderByChild("t").limitToLast(300); r4.on("value", s => { const o = s.val() || {}; REV = Object.keys(o).map(k => Object.assign({ id: k }, o[k])).sort((a, b) => (b.t || 0) - (a.t || 0)); revPaint(); }, () => {}); CHAT.refs.push(r4);
+  const r5 = db.ref("reviewLikes"); r5.on("value", s => { REVL = s.val() || {}; revPaint(); }, () => {}); CHAT.refs.push(r5);
   const r3 = db.ref("eventMeet"); r3.on("value", s => { MEET.ev = s.val() || {}; if (view === "members" && msub === "cal") render(); }); CHAT.refs.push(r3);
 }
 function meetPaint() { if (view === "members" && (msub === "meet" || msub === "chat")) { if (msub === "meet") render(); else chatPaint(); } }
@@ -1301,6 +1317,107 @@ function copyRoster() {
   copyText(t, "승인·동의한 회원 명단을 복사했습니다. 한글이나 엑셀 표에 붙여 넣으세요");
 }
 
+
+/* ===== 연수 후기 ===== */
+let REV = [], REVL = {}, REVF = "", REVPH = {}, REVPHL = {}, REVPICS = [];
+const revOf = sid => REV.filter(r => r.sid === sid);
+function revPaint() { if (view === "members" && msub === "review" && !ov.classList.contains("show")) render(); }
+function revEvents() { return (MD ? MD.schedules : []).filter(e => e.d <= TODAY).sort((a, b) => b.d.localeCompare(a.d)); }
+function reviewView() {
+  if (!chatReady()) return `<div class="empty">연수 후기는 실시간 데이터베이스가 연결되면 열립니다.</div>`;
+  chatStart(); meetStart();
+  const evs = revEvents(), list = REVF ? revOf(REVF) : REV;
+  const opts = `<option value="">모든 연수 (${REV.length})</option>` + evs.filter(e => revOf(e.id).length || e.id === REVF).map(e => `<option value="${esc(e.id)}"${e.id === REVF ? " selected" : ""}>${esc(e.d.slice(5).replace("-", "."))} ${esc(e.t)} (${revOf(e.id).length})</option>`).join("") + (REV.some(r => r.sid === "etc") ? `<option value="etc"${REVF === "etc" ? " selected" : ""}>그 밖의 모임 (${revOf("etc").length})</option>` : "");
+  setTimeout(revLoadPhotos, 0);
+  return `<div class="revbar"><select onchange="REVF=this.value;render()" aria-label="연수 고르기">${opts}</select><span class="sp"></span><button class="btn primary" onclick="openRevForm()">후기 쓰기</button></div>
+  ${list.length ? `<div class="revlist">${list.map(revCard).join("")}</div>` : `<div class="empty">${REVF ? "이 연수에는 아직 후기가 없어요." : "아직 올라온 후기가 없어요."} 자율연수에서 배운 점, 바로 수업에 써 본 이야기, 사진을 나눠 주세요.</div>`}`;
+}
+function revCard(r) {
+  const likes = Object.keys(REVL[r.id] || {}), liked = likes.includes(CHAT.uid), mine = r.uid === CHAT.uid;
+  const d = r.t ? new Date(r.t) : null;
+  return `<article class="rev">
+   <div class="rhead"><span class="rev-ev">${esc(r.sd ? r.sd.slice(5).replace("-", ".") + " " : "")}${esc(r.st || "그 밖의 모임")}</span><span class="sp"></span>${mine || isAdmin() ? `${mine ? `<button class="btn mini" onclick='openRevForm(${JSON.stringify(r.id)})'>고치기</button>` : ""}<button class="btn mini" onclick='delRev(${JSON.stringify(r.id)})'>지우기</button>` : ""}</div>
+   <div class="rby"><b>${esc(r.n)}</b>${r.sc ? ` · ${esc(r.sc)}` : ""}${d ? ` · ${d.getMonth() + 1}.${d.getDate()}` : ""}${r.ed ? " · 고침" : ""}</div>
+   <div class="rbody">${esc(r.x)}</div>
+   ${r.np ? `<div class="rph" data-rid="${esc(r.id)}">${Array.from({ length: r.np }, (_, i) => `<div class="ph">${REVPH[r.id] && REVPH[r.id][i] ? `<img src="${REVPH[r.id][i]}" alt="후기 사진 ${i + 1}" onclick='revZoom(${JSON.stringify(r.id)},${i})'>` : ""}</div>`).join("")}</div>` : ""}
+   <div class="rfoot"><button class="like${liked ? " on" : ""}" onclick='revLike(${JSON.stringify(r.id)})' aria-pressed="${liked}">${liked ? "♥" : "♡"} 공감 ${likes.length || ""}</button>${likes.length ? `<span class="likers">${likes.slice(0, 4).map(u => esc((CHAT.members[u] || {}).n || "")).filter(Boolean).join(", ")}${likes.length > 4 ? ` 외 ${likes.length - 4}명` : ""}</span>` : ""}</div></article>`;
+}
+function revLoadPhotos() {
+  document.querySelectorAll(".rph[data-rid]").forEach(el => {
+    const id = el.dataset.rid; if (REVPH[id] || REVPHL[id]) return;
+    REVPHL[id] = 1;
+    CHAT.db.ref("reviewPh/" + id).once("value").then(s => { REVPH[id] = s.val() || []; revPaint(); }).catch(() => {});
+  });
+}
+function revZoom(id, i) { openM(`<img src="${REVPH[id][i]}" alt="후기 사진" style="width:100%;border-radius:10px"><div class="mfoot"><button class="btn" onclick="closeM()">닫기</button></div>`); }
+async function revLike(id) {
+  const ref = CHAT.db.ref(`reviewLikes/${id}/${CHAT.uid}`);
+  try { if ((REVL[id] || {})[CHAT.uid]) await ref.remove(); else await ref.set(true); } catch (e) { toast("공감을 남기지 못했어요"); }
+}
+function openRevForm(editId, sid) {
+  const R = editId ? REV.find(r => r.id === editId) : null;
+  const cur = R ? R.sid : (sid || REVF || (revEvents()[0] || {}).id || "etc");
+  REVPICS = [];
+  openM(`<h2>${R ? "후기 고치기" : "연수 후기 쓰기"}</h2><div class="form">
+   <label for="rvs">어떤 연수였나요?</label><select id="rvs"${R ? " disabled" : ""}>${revEvents().map(e => `<option value="${esc(e.id)}"${e.id === cur ? " selected" : ""}>${esc(e.d.slice(5).replace("-", "."))} ${esc(e.t)}</option>`).join("")}<option value="etc"${cur === "etc" ? " selected" : ""}>그 밖의 모임</option></select>
+   <label for="rvx">후기</label><textarea id="rvx" style="min-height:150px" maxlength="3000" placeholder="배운 점, 우리 반에 바로 써 볼 것, 함께한 선생님께 하고 싶은 말 등을 자유롭게 적어 주세요.">${R ? esc(R.x) : ""}</textarea>
+   ${R ? "" : `<label for="rvp">사진 (3장까지, 고르면 알아서 줄여서 올려요)</label><input type="file" id="rvp" accept="image/*" multiple onchange="revPick(this)"><div class="rvprev" id="rvprev"></div>
+   <div class="sheetnote" style="margin-top:6px">학생 얼굴이 알아보이는 사진은 올리지 말아 주세요. 함께한 선생님 얼굴이 나온 사진은 그 선생님께 먼저 물어봐 주세요.</div>`}</div>
+   <div class="err" id="rverr"></div>
+   <div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" onclick='sendRev(${JSON.stringify(editId || "")})'>${R ? "고치기" : "올리기"}</button></div>`);
+}
+function shrinkImg(file) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => { const im = new Image(); im.onload = () => {
+      let q = 0.8, max = 1280, out = "";
+      for (let k = 0; k < 6; k++) {
+        const sc = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement("canvas");
+        c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        out = c.toDataURL("image/jpeg", q); if (out.length <= 300000) break;
+        q -= 0.1; max = Math.round(max * 0.85);
+      }
+      res(out); }; im.onerror = rej; im.src = fr.result; };
+    fr.onerror = rej; fr.readAsDataURL(file);
+  });
+}
+async function revPick(inp) {
+  const fs = [...inp.files].filter(f => f.type.startsWith("image/")).slice(0, 3);
+  if (inp.files.length > 3) toast("사진은 3장까지만 올릴 수 있어요");
+  $("#rvprev").innerHTML = "줄이는 중…";
+  try { REVPICS = await Promise.all(fs.map(shrinkImg)); } catch (e) { REVPICS = []; toast("사진을 읽지 못했어요"); }
+  $("#rvprev").innerHTML = REVPICS.map(u => `<img src="${u}" alt="">`).join("");
+}
+async function sendRev(editId) {
+  const x = $("#rvx").value.trim(), err = $("#rverr");
+  if (x.length < 5) return err.textContent = "후기를 조금 더 적어 주세요.";
+  const db = CHAT.db, TS = firebase.database.ServerValue.TIMESTAMP;
+  try {
+    busy(true);
+    if (editId) {
+      await db.ref("reviews/" + editId).update({ x, ed: TS });
+    } else {
+      const sid = $("#rvs").value, ev = (MD.schedules || []).find(e => e.id === sid);
+      const id = db.ref("reviews").push().key;
+      const rec = { uid: CHAT.uid, n: ME.name || ME.email, sc: ME.school || "", sid, st: ev ? ev.t : "그 밖의 모임", sd: ev ? ev.d : "", x, np: REVPICS.length, t: TS };
+      const up = { ["reviews/" + id]: rec };
+      if (REVPICS.length) up["reviewPh/" + id] = REVPICS;
+      await db.ref().update(up);
+      REVF = "";
+    }
+    closeM(); toast(editId ? "후기를 고쳤어요" : "후기를 올렸어요"); render();
+  } catch (e) { err.textContent = "올리지 못했어요. 사진이 너무 크거나 보안 규칙이 아직 게시되지 않았을 수 있어요."; }
+  finally { busy(false); }
+}
+function delRev(id) {
+  openM(`<h2>후기를 지울까요?</h2><p style="color:var(--sub)">지운 후기와 사진은 되살릴 수 없어요.</p><div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" onclick='doDelRev(${JSON.stringify(id)})'>지우기</button></div>`);
+}
+async function doDelRev(id) {
+  try { busy(true); await CHAT.db.ref().update({ ["reviews/" + id]: null, ["reviewPh/" + id]: null, ["reviewLikes/" + id]: null }); closeM(); toast("후기를 지웠어요"); }
+  catch (e) { toast("지우지 못했어요"); } finally { busy(false); }
+}
+
 /* ===== 사용 안내 ===== */
 function guideView() {
   const S = [
@@ -1326,6 +1443,7 @@ function guideView() {
       <li><b>대화</b>: 지금 접속한 회원이 초록 점으로 보여요. 이름을 누르면 1:1 쪽지, <b>전체 대화방</b>은 회원 모두가 함께 보는 방이에요. 접속하지 않은 선생님께 남긴 쪽지는 다음에 접속하면 볼 수 있어요.</li>
       <li><b>화상 회의</b>: 연구회 회의실(구글 미트)에 바로 들어갈 수 있어요. 지금 몇 명이 회의 중인지도 보여요. 3명 이상 회의는 60분이 지나면 끊기니, 같은 링크로 다시 들어오면 돼요.</li>
       <li><b>자율연수 일정</b>: 달력에서 일정을 눌러 <b>참석하기</b>를 누르면 참석 명단에 들어가요. 화상 회의가 연결된 일정은 거기서 바로 들어갈 수 있어요.</li>
+      <li><b>연수 후기</b>: 자율연수가 끝나면 배운 점과 사진(3장까지)을 남기고, 다른 선생님 후기에 공감을 누를 수 있어요. 일정 달력에서 지난 연수를 눌러도 후기를 쓰거나 볼 수 있어요.</li>
       <li><b>공지</b>: 운영진 공지를 보고 댓글을 달 수 있어요.</li>
       <li><b>산출물 책자</b>: 연말에 내 자료를 골라 책자에 넣고, 원고 PDF를 올리면 한 권으로 묶여요. 책자 탭에서 <b>원고 양식(한글)</b>과 <b>예시 원고</b>를 받을 수 있어요.</li></ul>`],
     ["g5", "휴대폰에서 쓰기", `<ul>
