@@ -152,17 +152,19 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
 .inapp .btns{display:flex;flex-direction:column;gap:8px}
 .msguide{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#f4f8f5;border:1px solid #cfe6d8;border-radius:12px;padding:12px 14px;margin:0 0 10px}.msguide>div{flex:1;min-width:240px;font-size:13.5px;color:var(--sub)}.msguide b{display:block;color:var(--text);font-size:14px}.msguide .btn{text-decoration:none;white-space:nowrap}
 .revbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}.revbar select{height:40px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:#fff;max-width:100%}.revbar .sp{flex:1}
-.revlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}
+.revlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;align-items:start}@media(max-width:520px){.revlist{grid-template-columns:1fr}}
 .rev{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
 .rhead{display:flex;align-items:center;gap:6px}.rhead .sp{flex:1}
 .rev-ev{font-size:12px;font-weight:700;color:var(--blue);background:#eef3fb;border:1px solid #d9e4f5;border-radius:6px;padding:2px 9px}
-.rby{font-size:12.5px;color:var(--sub);margin:8px 0 6px}.rby b{color:var(--text)}
+.rtitle{margin:10px 0 2px;font-size:17px;letter-spacing:-.3px}.rmeta{font-size:12.5px;color:var(--sub);margin-bottom:10px}.rby{font-size:12px;color:#98a2b3}.rfoot .sp{flex:1}
+.r2{display:flex;gap:10px}.r2>div{flex:1;min-width:0}.r2 input{width:100%}
 .rbody{white-space:pre-wrap;font-size:14.5px;line-height:1.7;word-break:break-word}
-.rph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.rph .ph{aspect-ratio:1;border-radius:10px;background:#eef1f5;overflow:hidden}.rph img{width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block}
+.rph{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.rph .ph{aspect-ratio:1;border-radius:10px;background:#eef1f5;overflow:hidden;position:relative;cursor:zoom-in}.rph img{width:100%;height:100%;object-fit:cover;display:block}.rph .more{position:absolute;inset:0;background:rgba(15,25,45,.55);color:#fff;font-size:22px;font-weight:700;display:grid;place-items:center}
+.gal img{width:100%;max-height:70vh;object-fit:contain;border-radius:10px;background:#111}.gnav{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:14px;color:var(--sub)}
 .rfoot{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #eef1f5}
 .like{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;color:var(--sub);transition:.15s}.like:hover{border-color:#e5484d;color:#e5484d}.like.on{background:#fdecec;border-color:#f3b4b6;color:#d93a3f;font-weight:700}
 .likers{font-size:12px;color:#98a2b3}
-.rvprev{display:flex;gap:6px;margin-top:6px;font-size:13px;color:var(--sub)}.rvprev img{width:84px;height:84px;object-fit:cover;border-radius:8px}
+.rvprev{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:13px;color:var(--sub);max-height:220px;overflow:auto}.rvprev::before{content:attr(data-msg);flex-basis:100%}.rvprev[data-msg=""]::before{display:none}.rvprev img{width:72px;height:72px;object-fit:cover;border-radius:8px}
 .evrev{display:flex;align-items:center;gap:6px;background:#f6f7f9;border-radius:10px;padding:8px 10px;margin:10px 0;font-size:13.5px}.evrev span{flex:1}
 .lrow{display:flex;gap:6px;margin-top:6px}.lrow .ll{flex:0 0 38%}.lrow .lu{flex:1;min-width:0}.lrow .btn{flex:0 0 auto}
 @media(max-width:520px){.lrow{flex-wrap:wrap}.lrow .ll{flex:1 1 100%}}
@@ -897,7 +899,7 @@ function openEv(id) {
   const e = MD.schedules.find(s => s.id === id), d = new Date(e.d);
   openM(`<h2>${esc(e.t)}</h2><dl class="meta"><dt>날짜</dt><dd>${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일 ${esc(e.tm)}</dd><dt>장소</dt><dd>${esc(e.p)}</dd><dt>참석 예정</dt><dd>${e.att.length ? e.att.map(esc).join(", ") : "아직 없음"}</dd>${evMeetUrl(id) ? `<dt>화상 회의</dt><dd><button class="btn mini ok" onclick='joinMeet(${JSON.stringify(evMeetUrl(id))},${JSON.stringify(e.t)})'>구글 미트 입장</button></dd>` : ""}</dl>
   ${isAdmin() && chatReady() ? `<div class="form" style="margin:0"><label for="evmu">화상 회의 연결 (운영진)</label><input type="text" id="evmu" value="${esc(MEET.ev[id] || "")}" placeholder="구글 미트 링크, 또는 room (연구회 회의실 사용), 비우면 연결 안 함"></div><div class="err" id="evmerr"></div>` : ""}
-  ${e.d <= TODAY && chatReady() ? `<div class="evrev"><span>이 연수 후기 ${revOf(id).length}개</span><button class="btn mini" onclick='closeM();REVF=${JSON.stringify(id)};pickTab("review")'>후기 보기</button><button class="btn mini ok" onclick='closeM();openRevForm(null,${JSON.stringify(id)})'>후기 쓰기</button></div>` : ""}
+  ${e.d <= TODAY && chatReady() ? `<div class="evrev"><span>이 연수 후기 ${revOf(id).length}개</span><button class="btn mini" onclick='closeM();REVF=${JSON.stringify(id)};pickTab("review")'>후기 보기</button>${isAdmin() ? `<button class="btn mini ok" onclick='closeM();openRevForm(null,${JSON.stringify(id)})'>후기 올리기</button>` : ""}</div>` : ""}
   <div class="mfoot">${isAdmin() ? `<button class="btn" onclick='delEv(${JSON.stringify(id)})'>일정 삭제</button>${chatReady() ? `<button class="btn" onclick='saveEvMeet(${JSON.stringify(id)})'>화상 회의 저장</button>` : ""}` : ""}<button class="btn primary" onclick='closeM();toggleAtt(${JSON.stringify(id)})'>${e.me ? "참석 취소" : "참석하기"}</button></div>`);
 }
 async function delEv(id) { try { busy(true); await api("delSchedule", { id }); closeM(); await loadMember(); render(); } catch (e) { toast(e.message); } finally { busy(false); } }
@@ -1329,42 +1331,67 @@ function reviewView() {
   const evs = revEvents(), list = REVF ? revOf(REVF) : REV;
   const opts = `<option value="">모든 연수 (${REV.length})</option>` + evs.filter(e => revOf(e.id).length || e.id === REVF).map(e => `<option value="${esc(e.id)}"${e.id === REVF ? " selected" : ""}>${esc(e.d.slice(5).replace("-", "."))} ${esc(e.t)} (${revOf(e.id).length})</option>`).join("") + (REV.some(r => r.sid === "etc") ? `<option value="etc"${REVF === "etc" ? " selected" : ""}>그 밖의 모임 (${revOf("etc").length})</option>` : "");
   setTimeout(revLoadPhotos, 0);
-  return `<div class="revbar"><select onchange="REVF=this.value;render()" aria-label="연수 고르기">${opts}</select><span class="sp"></span><button class="btn primary" onclick="openRevForm()">후기 쓰기</button></div>
-  ${list.length ? `<div class="revlist">${list.map(revCard).join("")}</div>` : `<div class="empty">${REVF ? "이 연수에는 아직 후기가 없어요." : "아직 올라온 후기가 없어요."} 자율연수에서 배운 점, 바로 수업에 써 본 이야기, 사진을 나눠 주세요.</div>`}`;
+  return `<div class="revbar"><select onchange="REVF=this.value;render()" aria-label="연수 고르기">${opts}</select><span class="sp"></span>${isAdmin() ? `<button class="btn primary" onclick="openRevForm()">연수 후기 올리기</button>` : ""}</div>
+  ${list.length ? `<div class="revlist">${list.map(revCard).join("")}</div>` : `<div class="empty">${REVF ? "이 연수의 후기가 아직 올라오지 않았어요." : "아직 올라온 연수 후기가 없어요."}${isAdmin() ? " 자율연수가 끝나면 진행 내용과 사진을 올려 주세요." : " 자율연수가 끝나면 운영진이 진행 내용과 사진을 올려 드려요."}</div>`}`;
 }
 function revCard(r) {
-  const likes = Object.keys(REVL[r.id] || {}), liked = likes.includes(CHAT.uid), mine = r.uid === CHAT.uid;
-  const d = r.t ? new Date(r.t) : null;
+  const likes = Object.keys(REVL[r.id] || {}), liked = likes.includes(CHAT.uid), N = 8;
+  const meta = [r.sd ? r.sd.replace(/-/g, ".") : "", r.pl, r.att ? `참석 ${r.att}명` : "", r.lead ? `나눔 ${r.lead}` : ""].filter(Boolean).map(esc).join(" · ");
   return `<article class="rev">
-   <div class="rhead"><span class="rev-ev">${esc(r.sd ? r.sd.slice(5).replace("-", ".") + " " : "")}${esc(r.st || "그 밖의 모임")}</span><span class="sp"></span>${mine || isAdmin() ? `${mine ? `<button class="btn mini" onclick='openRevForm(${JSON.stringify(r.id)})'>고치기</button>` : ""}<button class="btn mini" onclick='delRev(${JSON.stringify(r.id)})'>지우기</button>` : ""}</div>
-   <div class="rby"><b>${esc(r.n)}</b>${r.sc ? ` · ${esc(r.sc)}` : ""}${d ? ` · ${d.getMonth() + 1}.${d.getDate()}` : ""}${r.ed ? " · 고침" : ""}</div>
+   <div class="rhead"><span class="rev-ev">${esc(r.st || "그 밖의 모임")}</span><span class="sp"></span>${isAdmin() ? `<button class="btn mini" onclick='openRevForm(${JSON.stringify(r.id)})'>고치기</button><button class="btn mini" onclick='delRev(${JSON.stringify(r.id)})'>지우기</button>` : ""}</div>
+   <h3 class="rtitle">${esc(r.tt || r.st || "연수 후기")}</h3>
+   ${meta ? `<div class="rmeta">${meta}</div>` : ""}
    <div class="rbody">${esc(r.x)}</div>
-   ${r.np ? `<div class="rph" data-rid="${esc(r.id)}">${Array.from({ length: r.np }, (_, i) => `<div class="ph">${REVPH[r.id] && REVPH[r.id][i] ? `<img src="${REVPH[r.id][i]}" alt="후기 사진 ${i + 1}" onclick='revZoom(${JSON.stringify(r.id)},${i})'>` : ""}</div>`).join("")}</div>` : ""}
-   <div class="rfoot"><button class="like${liked ? " on" : ""}" onclick='revLike(${JSON.stringify(r.id)})' aria-pressed="${liked}">${liked ? "♥" : "♡"} 공감 ${likes.length || ""}</button>${likes.length ? `<span class="likers">${likes.slice(0, 4).map(u => esc((CHAT.members[u] || {}).n || "")).filter(Boolean).join(", ")}${likes.length > 4 ? ` 외 ${likes.length - 4}명` : ""}</span>` : ""}</div></article>`;
+   ${r.np ? `<div class="rph" data-rid="${esc(r.id)}" data-n="${Math.min(r.np, N)}">${Array.from({ length: Math.min(r.np, N) }, (_, i) => `<div class="ph" onclick='revZoom(${JSON.stringify(r.id)},${i})'>${revImg(r.id, i) ? `<img src="${revImg(r.id, i)}" alt="연수 사진 ${i + 1}">` : ""}${i === N - 1 && r.np > N ? `<span class="more">+${r.np - N}</span>` : ""}</div>`).join("")}</div>` : ""}
+   <div class="rfoot"><button class="like${liked ? " on" : ""}" onclick='revLike(${JSON.stringify(r.id)})' aria-pressed="${liked}">${liked ? "♥" : "♡"} 공감 ${likes.length || ""}</button>${likes.length ? `<span class="likers">${likes.slice(0, 4).map(u => esc((CHAT.members[u] || {}).n || "")).filter(Boolean).join(", ")}${likes.length > 4 ? ` 외 ${likes.length - 4}명` : ""}</span>` : ""}<span class="sp"></span><span class="rby">${esc(r.n)} 올림${r.np ? ` · 사진 ${r.np}장` : ""}</span></div></article>`;
+}
+const revImg = (id, i) => (REVPH[id] || {})[i] || "";
+function revFetch(id, i) {
+  const k = id + "/" + i; if (REVPHL[k] || revImg(id, i)) return Promise.resolve(revImg(id, i));
+  REVPHL[k] = CHAT.db.ref(`reviewPh/${id}/${i}`).once("value").then(s => { (REVPH[id] = REVPH[id] || {})[i] = s.val() || ""; return REVPH[id][i]; }).catch(() => "");
+  return REVPHL[k];
 }
 function revLoadPhotos() {
   document.querySelectorAll(".rph[data-rid]").forEach(el => {
-    const id = el.dataset.rid; if (REVPH[id] || REVPHL[id]) return;
-    REVPHL[id] = 1;
-    CHAT.db.ref("reviewPh/" + id).once("value").then(s => { REVPH[id] = s.val() || []; revPaint(); }).catch(() => {});
+    const id = el.dataset.rid, n = +el.dataset.n;
+    for (let i = 0; i < n; i++) if (!revImg(id, i) && !REVPHL[id + "/" + i]) revFetch(id, i).then(() => revPaintSoon());
   });
 }
-function revZoom(id, i) { openM(`<img src="${REVPH[id][i]}" alt="후기 사진" style="width:100%;border-radius:10px"><div class="mfoot"><button class="btn" onclick="closeM()">닫기</button></div>`); }
+let revT = null; function revPaintSoon() { clearTimeout(revT); revT = setTimeout(revPaint, 120); }
+let GAL = { id: "", i: 0 };
+async function revZoom(id, i) {
+  const r = REV.find(x => x.id === id); if (!r) return;
+  GAL = { id, i }; const src = await revFetch(id, i);
+  if (GAL.id !== id || GAL.i !== i) return;
+  openM(`<div class="gal"><img src="${src}" alt="후기 사진 ${i + 1}"><div class="gnav"><button class="btn" ${i ? "" : "disabled"} onclick='revZoom(${JSON.stringify(id)},${i - 1})'>◀ 이전</button><span>${i + 1} / ${r.np}</span><button class="btn" ${i < r.np - 1 ? "" : "disabled"} onclick='revZoom(${JSON.stringify(id)},${i + 1})'>다음 ▶</button></div></div><div class="mfoot"><button class="btn" onclick="closeM()">닫기</button></div>`);
+  if (i + 1 < r.np) revFetch(id, i + 1);
+}
+document.addEventListener("keydown", e => { if (!ov.classList.contains("show") || !document.querySelector(".gal")) return; const r = REV.find(x => x.id === GAL.id); if (!r) return; if (e.key === "ArrowRight" && GAL.i < r.np - 1) revZoom(GAL.id, GAL.i + 1); if (e.key === "ArrowLeft" && GAL.i > 0) revZoom(GAL.id, GAL.i - 1); });
 async function revLike(id) {
   const ref = CHAT.db.ref(`reviewLikes/${id}/${CHAT.uid}`);
   try { if ((REVL[id] || {})[CHAT.uid]) await ref.remove(); else await ref.set(true); } catch (e) { toast("공감을 남기지 못했어요"); }
 }
 function openRevForm(editId, sid) {
+  if (!isAdmin()) return;
   const R = editId ? REV.find(r => r.id === editId) : null;
   const cur = R ? R.sid : (sid || REVF || (revEvents()[0] || {}).id || "etc");
   REVPICS = [];
-  openM(`<h2>${R ? "후기 고치기" : "연수 후기 쓰기"}</h2><div class="form">
-   <label for="rvs">어떤 연수였나요?</label><select id="rvs"${R ? " disabled" : ""}>${revEvents().map(e => `<option value="${esc(e.id)}"${e.id === cur ? " selected" : ""}>${esc(e.d.slice(5).replace("-", "."))} ${esc(e.t)}</option>`).join("")}<option value="etc"${cur === "etc" ? " selected" : ""}>그 밖의 모임</option></select>
-   <label for="rvx">후기</label><textarea id="rvx" style="min-height:150px" maxlength="3000" placeholder="배운 점, 우리 반에 바로 써 볼 것, 함께한 선생님께 하고 싶은 말 등을 자유롭게 적어 주세요.">${R ? esc(R.x) : ""}</textarea>
-   ${R ? "" : `<label for="rvp">사진 (3장까지, 고르면 알아서 줄여서 올려요)</label><input type="file" id="rvp" accept="image/*" multiple onchange="revPick(this)"><div class="rvprev" id="rvprev"></div>
-   <div class="sheetnote" style="margin-top:6px">학생 얼굴이 알아보이는 사진은 올리지 말아 주세요. 함께한 선생님 얼굴이 나온 사진은 그 선생님께 먼저 물어봐 주세요.</div>`}</div>
+  const ev0 = (MD.schedules || []).find(e => e.id === cur);
+  openM(`<h2>${R ? "연수 후기 고치기" : "연수 후기 올리기"}</h2><div class="form">
+   <label for="rvs">어떤 연수였나요?</label><select id="rvs"${R ? " disabled" : ""} onchange="revFillEv()">${revEvents().map(e => `<option value="${esc(e.id)}"${e.id === cur ? " selected" : ""}>${esc(e.d.slice(5).replace("-", "."))} ${esc(e.t)}</option>`).join("")}<option value="etc"${cur === "etc" ? " selected" : ""}>그 밖의 모임</option></select>
+   <label for="rvt">제목</label><input type="text" id="rvt" maxlength="80" value="${esc(R ? (R.tt || "") : (ev0 ? ev0.t : ""))}" placeholder="예: 11월 자율연수 - 표현 활동 수업 나눔">
+   <div class="r2"><div><label for="rvpl">장소</label><input type="text" id="rvpl" maxlength="60" value="${esc(R ? (R.pl || "") : (ev0 ? ev0.p : ""))}"></div>
+   <div><label for="rva">참석 인원</label><input type="number" id="rva" min="0" max="999" value="${R ? (R.att || "") : (ev0 && ev0.att.length ? ev0.att.length : "")}" placeholder="명"></div></div>
+   <label for="rvl">나눔·강의한 선생님 (있다면)</label><input type="text" id="rvl" maxlength="60" value="${esc(R ? (R.lead || "") : "")}" placeholder="예: 박진철 선생님">
+   <label for="rvx">진행 내용</label><textarea id="rvx" style="min-height:170px" maxlength="5000" placeholder="어떤 주제로 무엇을 했는지, 나눈 이야기, 다음 연수 안내 등을 적어 주세요.">${R ? esc(R.x) : ""}</textarea>
+   <label for="rvp">${R ? `사진 더하기 (지금 ${R.np || 0}장)` : "사진 (여러 장 한꺼번에 고를 수 있어요. 큰 사진은 알아서 줄여서 올려요)"}</label><input type="file" id="rvp" accept="image/*" multiple onchange="revPick(this)"><div class="rvprev" id="rvprev" data-msg=""></div>
+   <div class="sheetnote" style="margin-top:6px">함께한 선생님 얼굴이 나온 사진은 회원만 보는 곳이라도 미리 양해를 구해 주세요.</div></div>
    <div class="err" id="rverr"></div>
    <div class="mfoot"><button class="btn" onclick="closeM()">취소</button><button class="btn primary" onclick='sendRev(${JSON.stringify(editId || "")})'>${R ? "고치기" : "올리기"}</button></div>`);
+}
+function revFillEv() {
+  const e = (MD.schedules || []).find(x => x.id === $("#rvs").value);
+  $("#rvt").value = e ? e.t : ""; $("#rvpl").value = e ? e.p : ""; $("#rva").value = e && e.att.length ? e.att.length : "";
 }
 function shrinkImg(file) {
   return new Promise((res, rej) => {
@@ -1383,29 +1410,38 @@ function shrinkImg(file) {
   });
 }
 async function revPick(inp) {
-  const fs = [...inp.files].filter(f => f.type.startsWith("image/")).slice(0, 3);
-  if (inp.files.length > 3) toast("사진은 3장까지만 올릴 수 있어요");
-  $("#rvprev").innerHTML = "줄이는 중…";
-  try { REVPICS = await Promise.all(fs.map(shrinkImg)); } catch (e) { REVPICS = []; toast("사진을 읽지 못했어요"); }
-  $("#rvprev").innerHTML = REVPICS.map(u => `<img src="${u}" alt="">`).join("");
+  const fs = [...inp.files].filter(f => f.type.startsWith("image/")), box = $("#rvprev");
+  REVPICS = []; box.innerHTML = "";
+  for (let i = 0; i < fs.length; i++) {
+    box.dataset.msg = `사진 줄이는 중 ${i + 1} / ${fs.length}`;
+    try { const u = await shrinkImg(fs[i]); REVPICS.push(u); box.insertAdjacentHTML("beforeend", `<img src="${u}" alt="">`); } catch (e) {}
+  }
+  box.dataset.msg = REVPICS.length ? `${REVPICS.length}장 준비됨` : "";
 }
 async function sendRev(editId) {
   const x = $("#rvx").value.trim(), err = $("#rverr");
-  if (x.length < 5) return err.textContent = "후기를 조금 더 적어 주세요.";
+  if (x.length < 5) return err.textContent = "진행 내용을 조금 더 적어 주세요.";
+  const extra = { tt: $("#rvt").value.trim(), pl: $("#rvpl").value.trim(), att: Math.max(0, Math.min(999, parseInt($("#rva").value, 10) || 0)), lead: $("#rvl").value.trim() };
   const db = CHAT.db, TS = firebase.database.ServerValue.TIMESTAMP;
   try {
     busy(true);
+    let id = editId, base = 0;
     if (editId) {
-      await db.ref("reviews/" + editId).update({ x, ed: TS });
+      base = (REV.find(r => r.id === editId) || {}).np || 0;
+      await db.ref("reviews/" + editId).update(Object.assign({ x, ed: TS }, extra));
     } else {
       const sid = $("#rvs").value, ev = (MD.schedules || []).find(e => e.id === sid);
-      const id = db.ref("reviews").push().key;
-      const rec = { uid: CHAT.uid, n: ME.name || ME.email, sc: ME.school || "", sid, st: ev ? ev.t : "그 밖의 모임", sd: ev ? ev.d : "", x, np: REVPICS.length, t: TS };
-      const up = { ["reviews/" + id]: rec };
-      if (REVPICS.length) up["reviewPh/" + id] = REVPICS;
-      await db.ref().update(up);
+      id = db.ref("reviews").push().key;
+      await db.ref("reviews/" + id).set({ uid: CHAT.uid, n: ME.name || ME.email, sc: ME.school || "", sid, st: ev ? ev.t : "그 밖의 모임", sd: ev ? ev.d : "", x, np: 0, t: TS, ...extra });
       REVF = "";
     }
+    let done = 0;
+    for (const u of REVPICS) {
+      err.style.color = "var(--sub)"; err.textContent = `사진 올리는 중 ${done + 1} / ${REVPICS.length}`;
+      await db.ref(`reviewPh/${id}/${base + done}`).set(u); done++;
+      if (done % 5 === 0 || done === REVPICS.length) await db.ref(`reviews/${id}/np`).set(base + done);
+    }
+    err.style.color = "";
     closeM(); toast(editId ? "후기를 고쳤어요" : "후기를 올렸어요"); render();
   } catch (e) { err.textContent = "올리지 못했어요. 사진이 너무 크거나 보안 규칙이 아직 게시되지 않았을 수 있어요."; }
   finally { busy(false); }
@@ -1443,7 +1479,7 @@ function guideView() {
       <li><b>대화</b>: 지금 접속한 회원이 초록 점으로 보여요. 이름을 누르면 1:1 쪽지, <b>전체 대화방</b>은 회원 모두가 함께 보는 방이에요. 접속하지 않은 선생님께 남긴 쪽지는 다음에 접속하면 볼 수 있어요.</li>
       <li><b>화상 회의</b>: 연구회 회의실(구글 미트)에 바로 들어갈 수 있어요. 지금 몇 명이 회의 중인지도 보여요. 3명 이상 회의는 60분이 지나면 끊기니, 같은 링크로 다시 들어오면 돼요.</li>
       <li><b>자율연수 일정</b>: 달력에서 일정을 눌러 <b>참석하기</b>를 누르면 참석 명단에 들어가요. 화상 회의가 연결된 일정은 거기서 바로 들어갈 수 있어요.</li>
-      <li><b>연수 후기</b>: 자율연수가 끝나면 배운 점과 사진(3장까지)을 남기고, 다른 선생님 후기에 공감을 누를 수 있어요. 일정 달력에서 지난 연수를 눌러도 후기를 쓰거나 볼 수 있어요.</li>
+      <li><b>연수 후기</b>: 자율연수가 끝나면 운영진(총무)이 진행 내용과 사진을 올려요. 회원은 사진을 크게 넘겨 보고 공감을 누를 수 있어요. 일정 달력에서 지난 연수를 눌러도 볼 수 있어요.</li>
       <li><b>공지</b>: 운영진 공지를 보고 댓글을 달 수 있어요.</li>
       <li><b>산출물 책자</b>: 연말에 내 자료를 골라 책자에 넣고, 원고 PDF를 올리면 한 권으로 묶여요. 책자 탭에서 <b>원고 양식(한글)</b>과 <b>예시 원고</b>를 받을 수 있어요.</li></ul>`],
     ["g5", "휴대폰에서 쓰기", `<ul>
@@ -1454,6 +1490,7 @@ function guideView() {
   if (isAdmin()) S.push(["g6", "운영진 안내", `<ul>
       <li><b>운영진 관리</b>에서 가입 신청을 승인·보류하고, 회원을 운영진으로 올릴 수 있어요. <b>도 명단 복사</b>로 연번·이름·소속·전화번호를 한 번에 복사해요.</li>
       <li>모든 자료를 고치거나 내릴 수 있고, 내려받기 기록을 볼 수 있어요.</li>
+      <li>자율연수가 끝나면 <b>연수 후기</b> 탭(또는 일정 달력의 지난 연수)에서 <b>연수 후기 올리기</b>로 진행 내용과 사진을 올려 주세요. 사진 장수 제한은 없어요.</li>
       <li>회원 공간 탭 오른쪽 <b>⇅ 순서</b>로 탭 순서를 바꾸면 모든 회원에게 같은 순서로 보여요.</li>
       <li>학년·영역·자료 종류 목록과 책자 제목은 관리 시트 <b>설정</b> 탭에서 고칩니다.</li></ul>`]);
   return `<div class="guide"><div class="panel"><h3>전북초등체육교과연구회 자료실 사용 안내</h3><p style="margin:0;font-size:14.5px;color:var(--sub)">선생님들이 함께 만들고 나누는 초등 체육 수업 자료실이에요. 궁금한 곳을 눌러 바로 보세요.</p>
