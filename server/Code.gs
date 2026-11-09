@@ -13,7 +13,7 @@ var MAX_UPLOAD_MB = 20;
 
 var SHEETS = {
   '자료': ['id','제목','설명','학년','영역','종류','공개범위','파일ID','파일이름','링크','참고자료','올린이메일','올린이','소속','등록일','조회','상태','원고파일ID','원고쪽수','원고상태','원고제출일'],
-  '회원': ['이메일','이름','소속','신청일','상태','역할','책자이름동의','도명단동의','처리일','전화번호','uid'],
+  '회원': ['이메일','이름','소속','신청일','상태','역할','책자이름동의','도명단동의','처리일','전화번호','uid','직위'],
   '일정': ['id','날짜','시간','제목','장소','큰행사','참석'],
   '공지': ['id','제목','내용','작성자','작성일','고정'],
   '댓글': ['id','공지id','작성자이메일','작성자','내용','작성일'],
@@ -150,6 +150,8 @@ function who_(email) {
     admin: !!(m && m['상태'] === '승인' && m['역할'] === '운영진'),
     member: !!(m && m['상태'] === '승인'),
     hasPhone: !!(m && m['전화번호']),
+    hasPos: !!(m && m['직위']),
+    pos: m ? (m['직위'] || '') : '',
     row: m
   };
 }
@@ -270,16 +272,18 @@ function view_(id) {
 
 /* ───────────── 회원 ───────────── */
 
-function meInfo_(u) { return { email: u.email, name: u.name, school: u.school, status: u.status, admin: u.admin, member: u.member, hasPhone: u.hasPhone }; }
+function meInfo_(u) { return { email: u.email, name: u.name, school: u.school, status: u.status, admin: u.admin, member: u.member, hasPhone: u.hasPhone, hasPos: u.hasPos, pos: u.pos }; }
 
 function join_(u, req) {
   if (u.row && u.status !== '보류') throw new Error('이미 가입 신청을 했습니다. (상태: ' + u.status + ')');
   var name = String(req.name || '').trim(), school = String(req.school || '').trim();
+  var pos = String(req.pos || '').trim().slice(0, 20);
   if (!name || !school) throw new Error('이름과 소속을 적어 주세요.');
+  if (!pos) throw new Error('직위를 골라 주세요.');
   ensureHeaders_('회원');
   var phone = phone_(req.phone);
   var data = { '이메일': u.email, '이름': name, '소속': school, '신청일': today_(), '상태': '대기', '역할': '회원',
-    '책자이름동의': req.book ? 'Y' : 'N', '도명단동의': req.reg ? 'Y' : 'N', '처리일': '', '전화번호': phone };
+    '책자이름동의': req.book ? 'Y' : 'N', '도명단동의': req.reg ? 'Y' : 'N', '처리일': '', '전화번호': phone, '직위': pos };
   if (u.row) update_('회원', u.row, data); else append_('회원', data);
   return { me: meInfo_(who_(u.email)) };
 }
@@ -287,7 +291,9 @@ function join_(u, req) {
 function updateMe_(u, req) {
   if (!u.row) throw new Error('먼저 가입 신청을 해 주세요.');
   ensureHeaders_('회원');
-  var patch = { '전화번호': phone_(req.phone) };
+  var patch = {};
+  if (req.phone != null && req.phone !== '') patch['전화번호'] = phone_(req.phone);
+  if (req.pos) patch['직위'] = String(req.pos).trim().slice(0, 20);
   if (req.reg != null) patch['도명단동의'] = req.reg ? 'Y' : 'N';
   update_('회원', u.row, patch);
   return { me: meInfo_(who_(u.email)) };
@@ -296,7 +302,7 @@ function updateMe_(u, req) {
 function adminData_() {
   ensureHeaders_('회원');
   var members = rows_('회원').map(function (m) {
-    return { email: m['이메일'], n: m['이름'], sc: m['소속'], dt: m['신청일'], s: m['상태'], role: m['역할'], book: m['책자이름동의'] === 'Y', reg: m['도명단동의'] === 'Y', phone: m['전화번호'] || '' };
+    return { email: m['이메일'], n: m['이름'], sc: m['소속'], dt: m['신청일'], s: m['상태'], role: m['역할'], book: m['책자이름동의'] === 'Y', reg: m['도명단동의'] === 'Y', phone: m['전화번호'] || '', pos: m['직위'] || '' };
   });
   var log = rows_('내려받기').slice(-30).reverse().map(function (l) { return { at: l['일시'], n: l['이름'], t: l['자료제목'] }; });
   return { members: members, log: log, sheetUrl: ss_().getUrl() };
