@@ -166,6 +166,11 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
 .likers{font-size:12px;color:#98a2b3}
 .rvprev{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:13px;color:var(--sub);max-height:220px;overflow:auto}.rvprev::before{content:attr(data-msg);flex-basis:100%}.rvprev[data-msg=""]::before{display:none}.rvprev img{width:72px;height:72px;object-fit:cover;border-radius:8px}
 .evrev{display:flex;align-items:center;gap:6px;background:#f6f7f9;border-radius:10px;padding:8px 10px;margin:10px 0;font-size:13.5px}.evrev span{flex:1}
+.share{display:flex;gap:14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0 0;background:#fff}
+.qrbox{flex:0 0 112px;width:112px;height:112px;display:grid;place-items:center;color:var(--sub);font-size:12px;border-radius:8px;background:#f6f7f9}.qrbox canvas{display:block;border-radius:6px}
+.sinfo{flex:1;min-width:0}.sinfo b{display:block;font-size:14px}.sinfo span{display:block;font-size:12.5px;color:var(--sub);margin:3px 0 8px;line-height:1.5}
+.sbtns{display:flex;gap:6px;flex-wrap:wrap}
+@media(max-width:480px){.share{flex-direction:column;align-items:flex-start}}
 .lrow{display:flex;gap:6px;margin-top:6px}.lrow .ll{flex:0 0 38%}.lrow .lu{flex:1;min-width:0}.lrow .btn{flex:0 0 auto}
 @media(max-width:520px){.lrow{flex-wrap:wrap}.lrow .ll{flex:1 1 100%}}
 .curf{background:#f6f7f9;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:var(--text)}
@@ -667,7 +672,61 @@ function openItem(id) {
    ${it.src ? `<p style="font-size:13px;margin:10px 0 0"><b>참고한 자료</b> ${esc(it.src)}</p>` : ""}
    <div class="lic">이용 조건: 출처 표시 · 비영리 · 고쳐 쓰면 출처 밝히기${it.m ? " · 회원 외 배포 금지" : ""}</div>
    ${(() => { const F = MD && MD.items.find(x => x.id === it.id); return F && F.canEdit ? `<div style="text-align:right;margin-top:10px"><button class="btn mini" onclick='closeM();openUpload(${JSON.stringify(it.id)})'>이 자료 고치기</button></div>` : ""; })()}
+   <div class="share"><div class="qrbox" id="qrBox" aria-label="이 자료로 바로 가는 QR 코드"></div><div class="sinfo"><b>이 자료 나누기</b><span>QR을 찍거나 링크를 누르면 이 자료가 바로 열려요. 연수 자료나 단톡방에 붙여 쓰세요.</span>
+    <div class="sbtns"><button class="btn mini" onclick='copyText(itemLink(${JSON.stringify(it.id)}),"링크를 복사했습니다")'>링크 복사</button><button class="btn mini" onclick='qrCopy(${JSON.stringify(it.id)})'>QR 이미지 복사</button><button class="btn mini" onclick='qrSave(${JSON.stringify(it.id)})'>QR 내려받기</button></div></div></div>
    <div class="cite"><div><b>출처 표기</b><span id="citeTxt">${esc(citeOf(it))}</span></div><button class="btn mini" onclick="copyText($('#citeTxt').textContent,'출처를 복사했습니다')">출처 복사</button></div>`);
+  setTimeout(() => qrDraw(it.id), 0);
+}
+/* ===== 자료마다 바로 가는 링크와 QR ===== */
+const itemLink = id => location.origin + location.pathname.replace(/index\.html$/, "") + "?i=" + encodeURIComponent(id);
+function loadQR() { return window.qrcode ? Promise.resolve() : new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "vendor/qrcode.js"; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
+function qrCanvas(text, size) {
+  const q = qrcode(0, "M"); q.addData(text); q.make();
+  const n = q.getModuleCount(), quiet = 2, cell = Math.floor(size / (n + quiet * 2)), c = document.createElement("canvas");
+  c.width = c.height = cell * (n + quiet * 2); const g = c.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.fillStyle = "#17325C";
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) g.fillRect((k + quiet) * cell, (r + quiet) * cell, cell, cell);
+  return c;
+}
+async function qrDraw(id) {
+  const box = $("#qrBox"); if (!box) return;
+  try { await loadQR(); const c = qrCanvas(itemLink(id), 240); c.style.width = c.style.height = "112px"; box.innerHTML = ""; box.appendChild(c); } catch (e) { box.textContent = "QR"; }
+}
+async function qrCard(id) {
+  await loadQR();
+  const it = allItems().find(x => x.id === id) || { t: "" }, W = 720, qr = qrCanvas(itemLink(id), 520);
+  const c = document.createElement("canvas"), g = c.getContext("2d"), F = "'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
+  g.font = `700 34px ${F}`;
+  const words = it.t.split(" "), lines = []; let cur = "";
+  for (const w of words) { const t = cur ? cur + " " + w : w; if (g.measureText(t).width > W - 100 && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur); if (lines.length > 3) { lines.length = 3; lines[2] += "…"; }
+  c.width = W; c.height = 60 + qr.height + 30 + lines.length * 46 + 70;
+  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(qr, (W - qr.width) / 2, 50);
+  g.fillStyle = "#1f2633"; g.textAlign = "center"; g.font = `700 34px ${F}`;
+  lines.forEach((l, i) => g.fillText(l, W / 2, 50 + qr.height + 50 + i * 46));
+  g.fillStyle = "#2f8a57"; g.font = `500 22px ${F}`; g.fillText("전북초등체육교과연구회 자료실", W / 2, c.height - 34);
+  return c;
+}
+async function qrSave(id) {
+  try { const c = await qrCard(id), a = document.createElement("a"), it = allItems().find(x => x.id === id) || { t: "자료" };
+    a.href = c.toDataURL("image/png"); a.download = `QR_${it.t.replace(/[\\/:*?"<>|]/g, "").slice(0, 40)}.png`; document.body.appendChild(a); a.click(); a.remove(); }
+  catch (e) { toast("QR을 만들지 못했어요"); }
+}
+async function qrCopy(id) {
+  try {
+    if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) throw 0;
+    const c = await qrCard(id), blob = await new Promise(r => c.toBlob(r, "image/png"));
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); toast("QR 이미지를 복사했어요. 한글·PPT·카톡에 붙여 넣으세요");
+  } catch (e) { toast("이 브라우저는 이미지 복사가 안 돼서 내려받기로 대신할게요"); qrSave(id); }
+}
+async function openDeepLink() {
+  let id = null; try { id = new URLSearchParams(location.search).get("i"); } catch (e) {}
+  if (!id) return;
+  try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) {}
+  for (let k = 0; k < 40 && (!authReady || (AUTH.currentUser && !ME)); k++) await new Promise(r => setTimeout(r, 100));
+  if (!allItems().some(x => x.id === id)) { await loadPublic(true); render(); }
+  if (allItems().some(x => x.id === id)) openItem(id); else toast("자료를 찾지 못했어요. 내려졌거나 주소가 바뀌었을 수 있어요");
 }
 async function copyText(t, msg) {
   try { await navigator.clipboard.writeText(t); toast(msg); }
@@ -1509,7 +1568,7 @@ window.addEventListener("hashchange", route);
 $("#logoBox").innerHTML = symSvg(38);
 $("#footLogo").innerHTML = symSvg(22);
 if (!apiReady()) { const b = $("#setupBar"); b.style.display = "block"; b.textContent = "설치 중: 서버 주소(API_URL)가 아직 연결되지 않았습니다. 설치를 마치면 이 줄이 사라집니다."; }
-loadPublic(false).then(route);
+loadPublic(false).then(route).then(openDeepLink);
 
 </script>
 </body>
