@@ -2,7 +2,7 @@
 
 선생님들이 함께 만들고 나누는 초등 체육 수업 자료실입니다.
 
-- 사이트: https://jbpe-hub.github.io/hub/
+- 사이트: https://jbpe-hub.github.io/
 - 화면: `index.html` (GitHub Pages)
 - 서버: `server/Code.gs` (연구회 공용 구글 계정의 Apps Script 웹 앱 — 이 파일은 기록용 사본)
 - 로그인: Firebase Authentication (Google)
