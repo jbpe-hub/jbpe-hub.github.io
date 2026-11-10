@@ -311,7 +311,8 @@ footer .flogo{display:inline-block;vertical-align:middle;margin-right:6px;line-h
 .chat-input textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:none;font-family:inherit;font-size:14px;min-height:44px;max-height:120px}
 .chat-note{font-size:11.5px;color:var(--sub);padding:0 14px 10px}
 nav a .cnt{font-size:11px;background:var(--orange);color:#fff;border-radius:999px;padding:0 6px;margin-left:5px}
-@media(max-width:760px){.chat{grid-template-columns:1fr}.chat-side{max-height:230px}.chat-main{min-height:460px}}
+@media(max-width:760px){.chat{grid-template-columns:1fr}.chat-side{max-height:none}.chat-main{min-height:460px}.offl[open]{max-height:320px;overflow-y:auto}}
+.offl summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--sub);padding:12px 8px 6px;border-top:1px solid #eef1f5;margin-top:6px}.offl summary::-webkit-details-marker{display:none}.offl summary span{color:var(--navy)}.offl summary em{margin-left:auto;font-style:normal;font-weight:500;font-size:12px;color:var(--blue)}.offl summary::after{content:"▾";color:var(--sub);transition:transform .15s}.offl[open] summary::after{transform:rotate(180deg)}.offl[open] summary em{display:none}
 .meetcard .meet-top{display:flex;gap:14px;align-items:center}
 .meet-ico{width:52px;height:52px;border-radius:14px;background:var(--green);display:grid;place-items:center;flex:none}
 .meet-people{display:flex;flex-wrap:wrap;gap:8px}
@@ -1290,7 +1291,9 @@ function chatSideHTML() {
   return meetBanner + `<button class="person room ${CHAT.active === "room" ? "on" : ""}" onclick="openRoom()"><span class="ricon" aria-hidden="true">#</span><span class="pn">전체 대화방<small>회원 모두가 함께</small></span></button>
    ${convs.length ? `<h4>쪽지</h4>${convs.map(([u, c]) => `<button class="person ${CHAT.active === u ? "on" : ""}" onclick='openDm(${JSON.stringify(u)})'><span class="dot ${online.includes(u) ? "live" : ""}"></span><span class="pn">${esc((CHAT.members[u] || {}).n || c.n || "회원")}<small>${esc(c.last || "")}</small></span>${c.unread ? '<span class="cnt">N</span>' : ""}</button>`).join("")}` : ""}
    <h4>지금 접속 중 <span class="onn">${online.length}명</span></h4>${online.length ? online.map(person).join("") : '<p class="side-empty">지금 접속한 다른 회원이 없어요</p>'}
-   <h4>접속 안 한 회원</h4>${ids.filter(u => !online.includes(u)).sort((a, b) => String((CHAT.members[a] || {}).n).localeCompare(String((CHAT.members[b] || {}).n), "ko")).map(person).join("") || '<p class="side-empty">모두 접속 중이에요</p>'}`;
+   ${(() => { const off = ids.filter(u => !online.includes(u)).sort((a, b) => String((CHAT.members[a] || {}).n).localeCompare(String((CHAT.members[b] || {}).n), "ko"));
+     if (CHAT.offOpen == null) CHAT.offOpen = !matchMedia("(max-width:760px)").matches;
+     return `<details class="offl"${CHAT.offOpen ? " open" : ""} ontoggle="CHAT.offOpen=this.open"><summary>접속 안 한 회원 <span>${off.length}명</span><em>눌러서 쪽지 보내기</em></summary>${off.map(person).join("") || '<p class="side-empty">모두 접속 중이에요</p>'}</details>`; })()}`;
 }
 function chatView() {
   if (!chatReady()) return `<div class="empty">대화 기능은 운영진이 실시간 데이터베이스를 연결하면 열립니다.</div>`;
