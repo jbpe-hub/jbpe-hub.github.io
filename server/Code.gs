@@ -8,6 +8,7 @@
  * 그다음: [배포] → [새 배포] → 유형 "웹 앱", 실행 계정 "나", 액세스 "모든 사용자".
  */
 
+var APP_VERSION = '1.4.0';   // 판 번호: index.html 의 APP_VERSION 과 늘 같게
 var FIREBASE_API_KEY = 'AIzaSyCtc18NQqggoKHnuOqC-3u7uRdF-6Zn73Q';
 var MAX_UPLOAD_MB = 20;
 

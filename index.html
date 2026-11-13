@@ -172,6 +172,7 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:20px}
 .sbtns{display:flex;gap:6px;flex-wrap:wrap}
 @media(max-width:480px){.share{flex-direction:column;align-items:flex-start}}
 .posrow{display:flex;gap:8px}.posrow select{flex:0 0 46%;min-width:0}.posrow input{flex:1;min-width:0}
+footer .ver{color:#b0b8c5}
 .lrow{display:flex;gap:6px;margin-top:6px}.lrow .ll{flex:0 0 38%}.lrow .lu{flex:1;min-width:0}.lrow .btn{flex:0 0 auto}
 @media(max-width:520px){.lrow{flex-wrap:wrap}.lrow .ll{flex:1 1 100%}}
 .curf{background:#f6f7f9;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:var(--text)}
@@ -402,11 +403,13 @@ aside h4:not(:first-of-type){border-top:1px solid #f1f3f6;padding-top:14px}
   <a href="#guide" data-v="guide" class="nguide"><span class="qi" aria-hidden="true">?</span>사용 안내</a>
 </div></nav>
 <main id="main"><div class="loading">자료를 불러오는 중입니다…</div></main>
-<footer><span class="flogo" id="footLogo"></span>전북초등체육교과연구회 · 자료 이용 시 출처를 밝혀 주세요 · 학생 개인정보가 담긴 자료는 올리지 않습니다</footer>
+<footer><span class="flogo" id="footLogo"></span>전북초등체육교과연구회 · 자료 이용 시 출처를 밝혀 주세요 · 학생 개인정보가 담긴 자료는 올리지 않습니다 <span class="ver" id="ver"></span></footer>
 <div class="overlay" id="ov"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
 <div class="busy" id="busy"><span id="busyTxt">처리 중…</span></div>
 <script>
+const APP_VERSION = "1.4.0";   // 판 번호: server/Code.gs 의 APP_VERSION 과 늘 같게
+
 /* ===== 설정 (여기 두 줄만 바꾸면 됩니다) ===== */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCtc18NQqggoKHnuOqC-3u7uRdF-6Zn73Q",
@@ -1583,6 +1586,7 @@ function route() {
 window.addEventListener("hashchange", route);
 $("#logoBox").innerHTML = symSvg(38);
 $("#footLogo").innerHTML = symSvg(22);
+$("#ver").textContent = "· 판 " + APP_VERSION;
 if (!apiReady()) { const b = $("#setupBar"); b.style.display = "block"; b.textContent = "설치 중: 서버 주소(API_URL)가 아직 연결되지 않았습니다. 설치를 마치면 이 줄이 사라집니다."; }
 loadPublic(false).then(route).then(openDeepLink);
 

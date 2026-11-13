@@ -3,7 +3,7 @@
 새 기능을 넣은 뒤 기존 흐름(목록·찾기·자료 창·가입·올리기·고치기·회원 공간·운영진)이
 그대로 도는지 실제 브라우저(크롬)로 돌려 본다. 서버와 파이어베이스는 가짜로 바꿔 끼운다.
 
-  python3 tests/smoke.py          # 실패가 하나라도 있으면 끝에 FAIL 과 함께 종료 코드 1
+  sh tests/run.sh full            # 코드 검사 + 이 화면 시험. 실패가 하나라도 있으면 끝에 FAIL 과 함께 종료 코드 1
 """
 import asyncio, json, re, sys, pathlib
 from playwright.async_api import async_playwright
