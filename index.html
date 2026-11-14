@@ -408,7 +408,7 @@ aside h4:not(:first-of-type){border-top:1px solid #f1f3f6;padding-top:14px}
 <div class="toast" id="toast"></div>
 <div class="busy" id="busy"><span id="busyTxt">처리 중…</span></div>
 <script>
-const APP_VERSION = "1.4.0";   // 판 번호: server/Code.gs 의 APP_VERSION 과 늘 같게
+const APP_VERSION = "1.5.0";   // 판 번호: server/Code.gs 의 APP_VERSION 과 늘 같게
 
 /* ===== 설정 (여기 두 줄만 바꾸면 됩니다) ===== */
 const FIREBASE_CONFIG = {
@@ -492,6 +492,22 @@ async function api(action, data = {}) {
   if (!j.ok) throw new Error(j.error || "서버 오류");
   return j;
 }
+/* 큰 응답(파일)을 받을 때 받은 양을 알려 주는 api */
+async function apiStream(action, data, onBytes) {
+  if (!apiReady()) throw new Error("아직 서버 주소(API_URL)가 설정되지 않았습니다.");
+  const token = AUTH.currentUser ? await AUTH.currentUser.getIdToken() : null;
+  const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, token, ...data }) });
+  let j;
+  if (res.body && res.body.getReader) {
+    const rd = res.body.getReader(), parts = []; let n = 0;
+    for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); n += value.length; onBytes && onBytes(n); }
+    const all = new Uint8Array(n); let o = 0; for (const p of parts) { all.set(p, o); o += p.length; }
+    j = JSON.parse(new TextDecoder().decode(all));
+  } else j = await res.json();
+  if (!j.ok) throw new Error(j.error || "서버 오류");
+  return j;
+}
+const mb = n => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + "MB";
 async function loadPublic(fresh) {
   let j = null;
   if (!fresh) { try { const r = await fetch("data/public.json?t=" + Date.now()); if (r.ok) j = await r.json(); } catch (e) {} }
@@ -747,16 +763,22 @@ async function getFile(id) {
   const it = allItems().find(x => x.id === id); if (!it) return;
   if (!it.hasFile && linksOf(it).length) { window.open(linksOf(it)[0].url, "_blank", "noopener"); return; }
   if (!ME) { if (it.url) window.open(it.url, "_blank", "noopener"); return; }
+  const t0 = Date.now(); let got = 0;
+  const tick = setInterval(() => { if (!got) busy(true, `서버에서 파일을 꺼내는 중… ${Math.round((Date.now() - t0) / 1000)}초`); }, 1000);
   try {
-    busy(true, "파일을 준비하는 중…");
-    const r = await api("getFile", { id });
+    busy(true, "서버에서 파일을 꺼내는 중…");
+    const r = await apiStream("getFile", { id }, n => { got = n; busy(true, `파일 받는 중… ${mb(n * 0.75)}`); });
+    clearInterval(tick);
     if (r.b64) {
-      const marked = await watermark(b64ToBytes(r.b64));
+      busy(true, "쪽마다 이름을 새기는 중…");
+      await new Promise(res => setTimeout(res, 30));
+      const marked = await watermark(b64ToBytes(r.b64), (i, n) => busy(true, `쪽마다 이름을 새기는 중… ${i} / ${n}쪽`));
+      busy(true, "저장하는 중…");
       saveBlob(marked, r.name.replace(/\.pdf$/i, "") + ".pdf");
       toast("내려받았습니다. 쪽마다 연구회 표시와 내려받은 선생님 이름이 찍혀 있어요");
     } else if (r.url) window.open(r.url, "_blank", "noopener");
   } catch (e) { toast(e.message); }
-  finally { busy(false); }
+  finally { clearInterval(tick); busy(false); }
 }
 
 /* 워터마크: 쪽 크기에 맞춘 투명 그림을 만들어 위에 덮기 */
@@ -764,7 +786,7 @@ function symPng(px) {
   return new Promise((res, rej) => { const img = new Image(); img.onload = () => { const c = document.createElement("canvas"); c.width = c.height = px; c.getContext("2d").drawImage(img, 0, 0, px, px); res(c); }; img.onerror = rej; img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(symSvg(px)); });
 }
 async function overlayPng(W, H, foot) {
-  const s = 2, c = document.createElement("canvas"); c.width = Math.round(W * s); c.height = Math.round(H * s);
+  const s = 1.5, c = document.createElement("canvas"); c.width = Math.round(W * s); c.height = Math.round(H * s);
   const x = c.getContext("2d");
   try { const logo = await symPng(240); x.globalAlpha = 0.07; const L = Math.min(W, H) * 0.32 * s; x.drawImage(logo, (c.width - L) / 2, c.height / 2 - L * 1.05, L, L); } catch (e) {}
   x.globalAlpha = 0.09; x.fillStyle = "#17325C"; x.textAlign = "center"; x.textBaseline = "middle";
@@ -773,11 +795,14 @@ async function overlayPng(W, H, foot) {
   x.globalAlpha = 1; x.fillStyle = "#9aa1ab"; x.font = `500 ${7 * s}px "Noto Sans KR", sans-serif`; x.fillText(foot, c.width / 2, c.height - 12 * s);
   return c.toDataURL("image/png");
 }
-async function watermark(bytes) {
+async function watermark(bytes, onPage) {
   const doc = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
   const foot = `${ME.name || ME.email} 선생님 · ${TODAY} 내려받음 · 전북초등체육교과연구회 자료실 · 무단 전재·배포 금지`;
   const cache = {};
-  for (const pg of doc.getPages()) {
+  const pages = doc.getPages();
+  for (let i = 0; i < pages.length; i++) {
+    const pg = pages[i];
+    if (onPage && (i % 5 === 0 || i === pages.length - 1)) { onPage(i + 1, pages.length); await new Promise(r => setTimeout(r, 0)); }
     const { width: W, height: H } = pg.getSize(), k = `${Math.round(W)}x${Math.round(H)}`;
     if (!cache[k]) cache[k] = await doc.embedPng(await overlayPng(W, H, foot));
     pg.drawImage(cache[k], { x: 0, y: 0, width: W, height: H });

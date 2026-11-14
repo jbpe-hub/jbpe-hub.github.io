@@ -46,11 +46,11 @@ window.__CALLS=[];
 const __U={json.dumps(logged_in)}?{{uid:"u1",email:"t@x.kr",getIdToken:async()=>"tok"}}:null;
 const __A={{currentUser:__U,setPersistence(){{return Promise.resolve()}},onAuthStateChanged(cb){{setTimeout(()=>cb(__U),20)}},signInWithPopup(){{return Promise.reject(new Error("x"))}},signOut(){{return Promise.resolve()}}}};
 window.firebase={{initializeApp(){{}},auth:Object.assign(function(){{return __A}},{{Auth:{{Persistence:{{LOCAL:1}}}},GoogleAuthProvider:function(){{}}}})}};
-const __R={{public:{json.dumps(PUBLIC, ensure_ascii=False)},me:{{ok:true,me:{json.dumps(ME_ADMIN, ensure_ascii=False)}}},memberData:{json.dumps(MD, ensure_ascii=False)},adminData:{json.dumps(AD, ensure_ascii=False)}}};
+const __R={{getFile:{{ok:true,name:"시험.pdf",mime:"application/pdf",b64:"JVBERi0xLjMKJeLjz9MKMSAwIG9iago8PAovUHJvZHVjZXIgKHB5cGRmKQo+PgplbmRvYmoKMiAwIG9iago8PAovVHlwZSAvUGFnZXMKL0NvdW50IDIKL0tpZHMgWyA0IDAgUiA1IDAgUiBdCj4+CmVuZG9iagozIDAgb2JqCjw8Ci9UeXBlIC9DYXRhbG9nCi9QYWdlcyAyIDAgUgo+PgplbmRvYmoKNCAwIG9iago8PAovVHlwZSAvUGFnZQovUmVzb3VyY2VzIDw8Cj4+Ci9NZWRpYUJveCBbIDAuMCAwLjAgNTk1IDg0MiBdCi9QYXJlbnQgMiAwIFIKPj4KZW5kb2JqCjUgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1Jlc291cmNlcyA8PAo+PgovTWVkaWFCb3ggWyAwLjAgMC4wIDU5NSA4NDIgXQovUGFyZW50IDIgMCBSCj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA1NCAwMDAwMCBuIAowMDAwMDAwMTE5IDAwMDAwIG4gCjAwMDAwMDAxNjggMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMyAwIFIKL0luZm8gMSAwIFIKPj4Kc3RhcnR4cmVmCjM1NgolJUVPRgo="}},public:{json.dumps(PUBLIC, ensure_ascii=False)},me:{{ok:true,me:{json.dumps(ME_ADMIN, ensure_ascii=False)}}},memberData:{json.dumps(MD, ensure_ascii=False)},adminData:{json.dumps(AD, ensure_ascii=False)}}};
 window.fetch=async(url,opt)=>{{let b={{ok:true}};
  if(String(url).includes("public")) b=__R.public;
  else if(opt&&opt.body){{const q=JSON.parse(opt.body);window.__CALLS.push(q);b=__R[q.action]||{{ok:true,me:__R.me.me}};}}
- return {{ok:true,json:async()=>JSON.parse(JSON.stringify(b))}};}};
+ return new Response(JSON.stringify(b),{{status:200,headers:{{"Content-Type":"application/json"}}}});}};
 </script>"""
     s = re.sub(r'<script src="https://www\.gstatic\.com[^"]*"></script>\n', "", SRC).replace('<script src="config.js"></script>', stub)
     s = s.replace('sc.src = "vendor/qrcode.js"', f'sc.src = "{(ROOT / "vendor" / "qrcode.js").as_uri()}"')
@@ -61,6 +61,11 @@ window.fetch=async(url,opt)=>{{let b={{ok:true}};
 RESULTS = []
 def check(name, ok, info=""):
     RESULTS.append((name, bool(ok), info))
+
+
+async def route_pdflib(pg):
+    js = (ROOT / "tests" / "vendor" / "pdf-lib.min.js").read_text(encoding="utf-8")
+    await pg.route("**/pdf-lib.min.js", lambda r: r.fulfill(status=200, content_type="application/javascript", body=js))
 
 
 async def guest(b):
@@ -96,6 +101,7 @@ async def admin(b, width):
     pg = await b.new_page(viewport={"width": width, "height": 900}); pg.set_default_timeout(5000); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     tag = "휴대폰" if width < 500 else "PC"
+    await route_pdflib(pg)
     await pg.goto(build(True)); await pg.wait_for_timeout(1200)
     check(f"{tag} 운영진: 로그인 후 목록", await pg.locator(".card").count() == 3)
     await pg.evaluate("openUpload()"); await pg.wait_for_timeout(200)
@@ -105,6 +111,10 @@ async def admin(b, width):
     check(f"{tag}: 고치기 창에 기존 링크 2개", await pg.locator("#ulinks .lrow").count() == 2)
     check(f"{tag}: 고치기 창 제목 채움", await pg.input_value("#ut") == "전략형 게임 지도안")
     await pg.evaluate("closeM()")
+    await pg.evaluate("() => { window.__saved = null; window.saveBlob = (bytes, name) => { window.__saved = { n: bytes.length, name }; }; }")
+    await pg.evaluate("() => { getFile('p1'); }"); await pg.wait_for_timeout(2500)
+    sv = await pg.evaluate("window.__saved")
+    check(f"{tag}: 회원 자료 내려받기(이름 새기기·저장)", sv and sv["n"] > 700 and sv["name"].endswith(".pdf"), str(sv))
     for k in ["chat", "meet", "cal", "review", "notice", "book"]:
         await pg.evaluate(f"go('members');msub='{k}';msubPicked=true;render()"); await pg.wait_for_timeout(150)
         check(f"{tag}: 회원 공간 '{k}' 탭 열림", await pg.locator("main").count() == 1)
@@ -124,7 +134,7 @@ async def main():
         b = await p.chromium.launch()
         for name, fn in [("비회원", guest(b)), ("PC 운영진", admin(b, 1280)), ("휴대폰 운영진", admin(b, 390))]:
             try: await fn
-            except Exception as e: check(f"{name}: 시험 도중 멈춤", False, str(e).splitlines()[0])
+            except Exception as e: check(f"{name}: 시험 도중 멈춤", False, " / ".join(str(e).splitlines()[:3]))
         await b.close()
     TMP.unlink(missing_ok=True)
     bad = [r for r in RESULTS if not r[1]]
